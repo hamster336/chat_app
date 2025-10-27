@@ -1,8 +1,6 @@
 import 'package:chat_app/models/chat_details.dart';
 import 'package:chat_app/screens/search_screen.dart';
-import 'package:chat_app/screens/signup_page.dart';
 import 'package:chat_app/screens/user_profile_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 
@@ -137,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             const SizedBox(height: 10),
+            // search bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SearchBar(
@@ -215,6 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
+      // add contacts
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -270,7 +270,9 @@ class _HomeScreenState extends State<HomeScreen> {
           otherUser.name!,
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
         ),
+
         subtitle: Text('Last Message', maxLines: 1),
+
         trailing: Text(
           '1 Jan',
           style: TextStyle(
@@ -292,62 +294,6 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => contacts = fetchedContacts);
       LocalStorage.saveCurrentUser(fetchedUser);
     }
-  }
-
-  List<Widget> _appBarActions() {
-    return [
-      // Uer profile button
-      ElevatedButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            PageTransition(
-              type: PageTransitionType.rightToLeft,
-              duration: Duration(milliseconds: 300),
-              reverseDuration: Duration(milliseconds: 300),
-              child: UserProfileScreen(user: currentUser!),
-            ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          backgroundColor: Theme.of(
-            context,
-          ).primaryColor.withValues(alpha: 0.9),
-          shadowColor: Theme.of(context).primaryColor.withValues(alpha: 0.6),
-          elevation: 6,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-            side: BorderSide(color: Colors.blue[900]!.withValues(alpha: 0.5)),
-          ),
-        ),
-
-        child: Row(
-          children: [
-            // Icon(Icons.person, color: Colors.white, size: 20,),
-            Container(
-              padding: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.person, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              getFirstName(currentUser?.name),
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                letterSpacing: 0.5,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(width: 10),
-    ];
   }
 
   String getFirstName(String? name) {

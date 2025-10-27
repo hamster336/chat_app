@@ -136,6 +136,8 @@ class ChatDetails {
 
   // send a message
   static Future<void> sendMessage(String msg, ChatUser otherUser) async {
+    final chatRoomId = generateChatRoomId(otherUser.uid!);
+
     // message sending time (also used as id)
     final time = DateTime.now().millisecondsSinceEpoch.toString();
 
@@ -149,8 +151,21 @@ class ChatDetails {
       sent: time,
     );
 
-    final ref = FirebaseFirestore.instance.collection('chats/${generateChatRoomId(otherUser.uid!)}/messages');
-    await ref.doc(time).set(message.toJson());
+    // final ref = FirebaseFirestore.instance.collection('chats/$chatRoomId/messages');
+    // await ref.doc(time).set(message.toJson());
+
+    final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatRoomId);
+
+    // store actual message inside messages collection
+    await chatRef.collection('messages').doc(time).set(message.toJson());
+
+    // update the chatRoom with last message info
+    await chatRef.set({
+      'participants' : [currentUserId, otherUser.uid],
+      'lastMessage' : msg,
+      'lastMessageTime' : time,
+      'lastMessageFrom' : currentUserId,
+    }, SetOptions(merge: true));
   }
 
   // format time into readable format
@@ -168,8 +183,50 @@ class ChatDetails {
   }
 
   // get the last message of each contact
-  static Future<Message?> getLastMessage(ChatUser user) async{
+  static Future<Map<String, dynamic>> getLastMessage(ChatUser user) async{
+    final chatRoomId = generateChatRoomId(user.uid!);
+    final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatRoomId);
 
-    return null;
+    try{
+      final doc = await chatRef.get();
+      final data = doc.data();
+
+      if(data != null){
+        return {
+          'msg' : data['lastMessage'],
+          'msgTime' : getDate(data['lastMessageTime']),
+          'msgFrom' : data['lastMessageFrom']
+        };
+      }else{
+        // return null;
+        return {
+          'msg' : 'Tap to begin conversation',
+          'msgTime' : '',
+          'msgFrom' : ''
+        };
+      }
+
+    }catch (ex) {
+      log(ex.toString());
+      rethrow;
+    }
+  }
+
+  static getDate(String? time) {
+    if(time == null) return '';
+
+    final date = DateTime.fromMillisecondsSinceEpoch(int.parse(time));
+    DateTime now = DateTime.now();
+
+    final difference = date.difference(now).inDays;
+
+    List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    if(difference == 0) return 'Today';
+    if(difference == 1) return 'Yesterday';
+
+    if(date.year < now.year) return '${date.day}/${date.month}/${date.year}';
+
+    return '${date.day} ${months[date.month - 1]}';
   }
 }
