@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1085460944377",
+    "project_id": "chat-app-a5b22",
+    "storage_bucket": "chat-app-a5b22.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1085460944377:android:d258cf0f277f4606559928",
+        "android_client_info": {
+          "package_name": "com.hamster.chat_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_n_U3BHtOf-d4pvtAsi8gPJjjs1jjnf4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
