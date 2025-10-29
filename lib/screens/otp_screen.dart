@@ -5,6 +5,7 @@ import 'package:chat_app/models/local_storage.dart';
 import 'package:chat_app/screens/create_account.dart';
 import 'package:chat_app/screens/home_screen.dart';
 import 'package:chat_app/models/ui_helper.dart';
+import 'package:chat_app/screens/loading_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -62,7 +63,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
                     style: TextStyle(fontSize: 45, fontWeight: FontWeight.bold),
                   ),
                 ),
-        
+
                 SizedBox(
                   width: size.width * 0.85,
                   child: Text(
@@ -70,9 +71,9 @@ class _VerifyOTPState extends State<VerifyOTP> {
                     style: TextStyle(fontSize: 24, color: Colors.grey[700]),
                   ),
                 ),
-        
+
                 const SizedBox(height: 80),
-        
+
                 SizedBox(
                   width: size.width * 0.85,
                   child: Text(
@@ -82,9 +83,9 @@ class _VerifyOTPState extends State<VerifyOTP> {
                     softWrap: true,
                   ),
                 ),
-        
+
                 const SizedBox(height: 10),
-        
+
                 SizedBox(
                   width: size.width * 0.85,
                   height: 50,
@@ -104,50 +105,78 @@ class _VerifyOTPState extends State<VerifyOTP> {
                     keyboardType: TextInputType.number,
                   ),
                 ),
-        
+
                 const SizedBox(height: 50),
-        
+
                 SizedBox(
                   width: size.width * 0.60,
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
                       if (otpController.text.toString().trim().isEmpty) {
-                        UiHelper.customAlertBox(context, 'Please enter the OTP!');
+                        UiHelper.customAlertBox(
+                          context,
+                          'Please enter the OTP!',
+                        );
                       }
-        
+
                       try {
                         PhoneAuthCredential credential =
                             PhoneAuthProvider.credential(
                               verificationId: widget.verificationid,
                               smsCode: otpController.text.toString(),
                             );
-                        FirebaseAuth.instance.signInWithCredential(credential).then(
-                          (value) async {
-                            await isRegistered(widget.number)
-                                ? {
-                              updateLoadingState(value: true),
-                              await LocalStorage.saveContacts(await ChatDetails.getContacts()),
-                              await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true)),
-                              updateLoadingState(),
-                              Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                builder: (BuildContext context) => HomeScreen(),
-                              ),
-                                  (route) => false,
-                            )}
-                                : Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (BuildContext context) =>
-                                            CreateAccount(number: widget.number),
-                                  ),
-                                  (route) => false,
-                                );
-                          },
-                        );
+                        FirebaseAuth.instance
+                            .signInWithCredential(credential)
+                            .then((value) async {
+                              await isRegistered(widget.number)
+                                  ? {
+                                    // updateLoadingState(value: true),
+                                    // await LocalStorage.saveContacts(
+                                    //   await ChatDetails.getContacts(),
+                                    // ),
+                                    // await LocalStorage.saveCurrentUser(
+                                    //   await ChatDetails.getCurrUser(
+                                    //     forceRefresh: true,
+                                    //   ),
+                                    // ),
+                                    // updateLoadingState(),
+                                    // Navigator.pushAndRemoveUntil(
+                                    //   context,
+                                    //   MaterialPageRoute(
+                                    //     builder:
+                                    //         (BuildContext context) =>
+                                    //             HomeScreen(),
+                                    //   ),
+                                    //   (route) => false,
+                                    // ),
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => LoadingScreen(
+                                              message: 'Getting things ready...',
+                                              loadData: () async{
+                                                await LocalStorage.saveContacts(await ChatDetails.getContacts());
+                                                await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
+                                              },
+                                              nextScreen: HomeScreen(),
+                                            ),
+                                      ),
+                                    ),
+                                  }
+                                  : Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (BuildContext context) =>
+                                              CreateAccount(
+                                                number: widget.number,
+                                              ),
+                                    ),
+                                    (route) => false,
+                                  );
+                            });
                       } catch (ex) {
                         UiHelper.customAlertBox(context, ex.toString());
                       }
@@ -158,7 +187,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
                         borderRadius: BorderRadius.circular(18),
                       ),
                     ),
-        
+
                     child: Text(
                       'Verify',
                       style: TextStyle(
@@ -169,8 +198,8 @@ class _VerifyOTPState extends State<VerifyOTP> {
                     ),
                   ),
                 ),
-        
-                SizedBox(height: size.longestSide * 0.05,)
+
+                SizedBox(height: size.longestSide * 0.05),
               ],
             ),
           ),

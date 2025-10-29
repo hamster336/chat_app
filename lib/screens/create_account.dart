@@ -10,6 +10,7 @@ import '../models/chat_details.dart';
 import '../models/chat_user.dart';
 import '../models/local_storage.dart';
 import 'home_screen.dart';
+import 'loading_screen.dart';
 
 class CreateAccount extends StatefulWidget {
   final String number;
@@ -268,18 +269,32 @@ class _CreateAccountState extends State<CreateAccount> {
 
                     actions: [
                       TextButton(
-                        onPressed: () async{
-                          updateLoadingState(value: true);
-                          await LocalStorage.saveContacts(await ChatDetails.getContacts());
-                          await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
-                          updateLoadingState();
-
-                          Navigator.pushAndRemoveUntil(
+                        onPressed: () {
+                          // updateLoadingState(value: true);
+                          // await LocalStorage.saveContacts(await ChatDetails.getContacts());
+                          // await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
+                          // updateLoadingState();
+                          //
+                          // Navigator.pushAndRemoveUntil(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (context) => HomeScreen(),
+                          //   ),
+                          //   (route) => false,
+                          // );
+                          Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => HomeScreen(),
+                              builder:
+                                  (_) => LoadingScreen(
+                                message: 'Getting things ready...',
+                                loadData: () async{
+                                  // await LocalStorage.saveContacts(await ChatDetails.getContacts());
+                                  await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
+                                },
+                                nextScreen: HomeScreen(),
+                              ),
                             ),
-                            (route) => false,
                           );
                         },
                         child: Text('OK', style: TextStyle(color: Colors.blue)),
