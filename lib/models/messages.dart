@@ -1,4 +1,16 @@
-class Message {
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+
+@HiveType(typeId: 1)
+class Message extends HiveObject{
+
+  @HiveField(0) late final String msg;
+  @HiveField(1) late final String read;
+  @HiveField(2) late final String fromId;
+  @HiveField(3) late final String toId;
+  @HiveField(4) late final String sent;
+  @HiveField(5) late final Type type;
+
   Message({
     required this.msg,
     required this.read,
@@ -8,12 +20,6 @@ class Message {
     required this.sent,
   });
 
-  late final String msg;
-  late final String read;
-  late final String fromId;
-  late final String toId;
-  late final String sent;
-  late final Type type;
 
   Message.fromJson(Map<String, dynamic> json){
     msg = json['msg'].toString();
@@ -36,4 +42,6 @@ class Message {
   }
 }
 
-enum Type{text, image}
+
+@HiveType(typeId: 2)
+enum Type{@HiveField(0)text, @HiveField(1) image}

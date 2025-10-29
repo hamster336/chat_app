@@ -10,7 +10,6 @@ import 'chat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool forceRefresh;
-
   const HomeScreen({super.key, this.forceRefresh = false});
 
   @override
