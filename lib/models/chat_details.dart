@@ -8,6 +8,11 @@ import 'local_storage.dart';
 
 class ChatDetails {
   static String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  //update currentUserId after each signIn
+  static void updateCurrentUserId(){
+    currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  }
+
   static ChatUser? currentUser = LocalStorage.getCurrentUser();
 
   static Future<ChatUser> getDetails(String userId, {bool forceRefresh = false}) async {

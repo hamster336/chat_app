@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:chat_app/models/chat_details.dart';
 import 'package:chat_app/screens/search_screen.dart';
 import 'package:chat_app/screens/user_profile_screen.dart';
@@ -47,11 +49,9 @@ class _HomeScreenState extends State<HomeScreen> {
       updateLoadingState();
       return;
     }
-
     final fetchedContacts = await ChatDetails.getContacts(forceRefresh: true);
-
-    contacts = fetchedContacts;
     updateLoadingState();
+    contacts = fetchedContacts;
   }
 
   void updateLoadingState({bool value = false}) {
@@ -73,6 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text('Chat', style: TextStyle(fontSize: 35)),
         actions: [
+          // Profile Button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: ElevatedButton(
@@ -139,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SearchBar(
                 controller: searchController,
+                onTap: () => log(ChatDetails.currentUserId),
                 onChanged: (_) async {},
                 backgroundColor: WidgetStateProperty.all(Colors.grey[200]),
                 elevation: WidgetStateProperty.all(0),
@@ -172,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       SizedBox(height: size.height * 0.15),
                                       Image(
                                         image: const AssetImage(
-                                          'images/message2.jpg',
+                                          'assets/images/message2.jpg',
                                         ),
                                         height: size.height * 0.33,
                                         width: size.width * 0.85,

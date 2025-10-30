@@ -1,5 +1,9 @@
 import 'package:chat_app/models/check_if_logged_in.dart';
 import 'package:chat_app/models/local_storage.dart';
+import 'package:chat_app/screens/done_checking.dart';
+import 'package:chat_app/screens/home_screen.dart';
+import 'package:chat_app/screens/loading_screen.dart';
+import 'package:chat_app/screens/signup_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -38,8 +42,8 @@ class MyApp extends StatelessWidget {
         ),
 
         home: CheckIfLoggedIn(),
-        // home: CreateAccount(number: "+977 9800000000",),
-        // home: ChatScreen(currentUserId: 'IedlfEzyxLQZ8BG5jfYn4jxUXli2', otherUserId: '8vvHjisC2uVVg9jD2SdPUHLcSAz2', chatRoomId: ChatRoom.generateChatRoomId('IedlfEzyxLQZ8BG5jfYn4jxUXli2', '8vvHjisC2uVVg9jD2SdPUHLcSAz2'),),
+        // home: DoneChecking(nextScreen: SignupPage(), message: 'Done!',),
+        // home: LoadingScreen(message: 'Testing', loadData: () {}, nextScreen: SignupPage()),
       ),
     );
   }

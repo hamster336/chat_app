@@ -174,7 +174,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // popupMenu to attach images and documents
+  // popupMenu to attach assets and documents
   PopupMenuButton _attachDocument() {
     return PopupMenuButton<String>(
       offset: Offset(-10, -100),

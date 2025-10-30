@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:chat_app/models/ui_helper.dart';
+import 'package:chat_app/screens/done_checking.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -30,22 +31,11 @@ class _CreateAccountState extends State<CreateAccount> {
 
   File? pickedImage;
 
-  bool isLoading = false;
-
   @override
   void dispose() {
     nameController.dispose();
     bioController.dispose();
     super.dispose();
-  }
-
-  void updateLoadingState({bool value = false}) {
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      isLoading = value;
-    });
   }
 
   @override
@@ -252,56 +242,76 @@ class _CreateAccountState extends State<CreateAccount> {
 
     FirebaseAuth auth = FirebaseAuth.instance;
     try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (_) => Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 5,
+                color: Colors.blue[200],
+              ),
+            ),
+      );
       await FirebaseFirestore.instance
           .collection('Users')
           .doc(auth.currentUser?.uid)
-          .set(user.toJson(),).then((value) {
+          .set(user.toJson())
+          .then((value) {
             if (mounted) {
-              showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text(
-                      'Account Created',
-                      style: TextStyle(fontSize: 17, color: Colors.black),
-                      textDirection: TextDirection.ltr,
-                    ),
-
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          // updateLoadingState(value: true);
-                          // await LocalStorage.saveContacts(await ChatDetails.getContacts());
-                          // await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
-                          // updateLoadingState();
-                          //
-                          // Navigator.pushAndRemoveUntil(
-                          //   context,
-                          //   MaterialPageRoute(
-                          //     builder: (context) => HomeScreen(),
-                          //   ),
-                          //   (route) => false,
-                          // );
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => LoadingScreen(
-                                message: 'Getting things ready...',
-                                loadData: () async{
-                                  // await LocalStorage.saveContacts(await ChatDetails.getContacts());
-                                  await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
-                                },
-                                nextScreen: HomeScreen(),
-                              ),
-                            ),
-                          );
-                        },
-                        child: Text('OK', style: TextStyle(color: Colors.blue)),
+              // showDialog(
+              //   context: context,
+              //   builder: (context) {
+              //     return AlertDialog(
+              //       title: Text(
+              //         'Account Created',
+              //         style: TextStyle(fontSize: 17, color: Colors.black),
+              //         textDirection: TextDirection.ltr,
+              //       ),
+              //
+              //       actions: [
+              //         TextButton(
+              //           onPressed: () {
+              //             Navigator.pushReplacement(
+              //               context,
+              //               MaterialPageRoute(
+              //                 builder:
+              //                     (_) => LoadingScreen(
+              //                   message: 'Getting things ready...',
+              //                   loadData: () async{
+              //                     // await LocalStorage.saveContacts(await ChatDetails.getContacts());
+              //                     await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
+              //                   },
+              //                   nextScreen: HomeScreen(),
+              //                 ),
+              //               ),
+              //             );
+              //           },
+              //           child: Text('OK', style: TextStyle(color: Colors.blue)),
+              //         ),
+              //       ],
+              //     );
+              //   },
+              // );
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (_) => DoneChecking(
+                        nextScreen: LoadingScreen(
+                          message: 'Getting things ready...',
+                          loadData: () async {
+                            ChatDetails.updateCurrentUserId();
+                            await LocalStorage.saveContacts(await ChatDetails.getContacts());
+                            await LocalStorage.saveCurrentUser(
+                              await ChatDetails.getCurrUser(forceRefresh: true),
+                            );
+                          },
+                          nextScreen: HomeScreen(),
+                        ),
+                        message: 'Account Created!',
                       ),
-                    ],
-                  );
-                },
+                ),
               );
             }
           });
@@ -328,11 +338,4 @@ class _CreateAccountState extends State<CreateAccount> {
     }
     return keywords;
   }
-
-  void showProgressIndicator(){
-    if(isLoading){
-      Center(child: CircularProgressIndicator(),);
-    }
-  }
-
 }

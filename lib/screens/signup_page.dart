@@ -33,6 +33,7 @@ class _SignupPageState extends State<SignupPage> {
             children: [
               SizedBox(height: (size.height * 0.20)),
 
+              // primary heading text
               SizedBox(
                 width: size.width * 0.85,
                 child: Text(
@@ -41,6 +42,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
 
+              // secondary heading text
               SizedBox(
                 width: size.width * 0.85,
                 child: Text(
@@ -49,18 +51,20 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
 
-              const SizedBox(height: 80),
+              SizedBox(height: size.height * 0.08),
 
+              // tertiary text
               SizedBox(
                 width: size.width * 0.85,
                 child: Text(
                   'Enter your phone number with country code to verify!',
-                  style: TextStyle(fontSize: 16),
+                  style: TextStyle(fontSize: 17),
                 ),
               ),
 
               const SizedBox(height: 10),
 
+              // textField
               SizedBox(
                 child: TextField(
                   maxLength: 15,
@@ -79,8 +83,9 @@ class _SignupPageState extends State<SignupPage> {
                 ),
               ),
 
-              const SizedBox(height: 50),
+              SizedBox(height: size.height * 0.06),
 
+              // send Otp button
               SizedBox(
                 width: size.width * 0.60,
                 height: 50,
@@ -103,18 +108,26 @@ class _SignupPageState extends State<SignupPage> {
                         );
                       }
                     } else {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) => Center(
+                          child: CircularProgressIndicator(strokeWidth: 5, color: Colors.blue[200]),
+                        ),
+                      );
+
                       await FirebaseAuth.instance.verifyPhoneNumber(
                         phoneNumber: "+${numController.text.toString()}",
 
-                        verificationCompleted: (
-                          PhoneAuthCredential credential,
-                        ) async {
+                        verificationCompleted: (PhoneAuthCredential credential) async {
+                          Navigator.pop(context);
                           await FirebaseAuth.instance.signInWithCredential(
                             credential,
                           );
                         },
 
                         verificationFailed: (FirebaseAuthException ex) {
+                          Navigator.pop(context);
                           if (mounted) {
                             UiHelper.customAlertBox(
                               context,
@@ -123,10 +136,8 @@ class _SignupPageState extends State<SignupPage> {
                           }
                         },
 
-                        codeSent: (
-                          String verificationId,
-                          int? forceResendingToken,
-                        ) {
+                        codeSent: (String verificationId, int? forceResendingToken) {
+                          Navigator.pop(context);
                           if (mounted) {
                             Navigator.push(
                               context,
@@ -134,8 +145,7 @@ class _SignupPageState extends State<SignupPage> {
                                 builder:
                                     (context) => VerifyOTP(
                                       verificationid: verificationId,
-                                      number:
-                                          "+${numController.text.toString()}",
+                                      number: "+${numController.text.toString()}",
                                     ),
                               ),
                             );
@@ -163,6 +173,8 @@ class _SignupPageState extends State<SignupPage> {
                   ),
                 ),
               ),
+
+              SizedBox(height: size.height * 0.1,)
             ],
           ),
         ),

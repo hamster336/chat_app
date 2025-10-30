@@ -10,6 +10,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'done_checking.dart';
+
 class VerifyOTP extends StatefulWidget {
   final String verificationid, number;
 
@@ -56,6 +58,8 @@ class _VerifyOTPState extends State<VerifyOTP> {
             child: Column(
               children: [
                 SizedBox(height: (size.height * 0.20)),
+
+                // primary heading text
                 SizedBox(
                   width: size.width * 0.85,
                   child: Text(
@@ -64,6 +68,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
                   ),
                 ),
 
+                // secondary heading text
                 SizedBox(
                   width: size.width * 0.85,
                   child: Text(
@@ -72,7 +77,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
                   ),
                 ),
 
-                const SizedBox(height: 80),
+                SizedBox(height: size.height * 0.08),
 
                 SizedBox(
                   width: size.width * 0.85,
@@ -86,6 +91,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
 
                 const SizedBox(height: 10),
 
+                // textField
                 SizedBox(
                   width: size.width * 0.85,
                   height: 50,
@@ -106,7 +112,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
                   ),
                 ),
 
-                const SizedBox(height: 50),
+                SizedBox(height: size.height * 0.06),
 
                 SizedBox(
                   width: size.width * 0.60,
@@ -121,62 +127,95 @@ class _VerifyOTPState extends State<VerifyOTP> {
                       }
 
                       try {
+                        showDialog(
+                          context: context,
+                          barrierDismissible: false,
+                          builder:
+                              (_) => Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 5,
+                                  color: Colors.blue[200],
+                                ),
+                              ),
+                        );
                         PhoneAuthCredential credential =
                             PhoneAuthProvider.credential(
                               verificationId: widget.verificationid,
-                              smsCode: otpController.text.toString(),
+                              smsCode: otpController.text.toString().trim(),
                             );
-                        FirebaseAuth.instance
-                            .signInWithCredential(credential)
-                            .then((value) async {
-                              await isRegistered(widget.number)
-                                  ? {
-                                    // updateLoadingState(value: true),
-                                    // await LocalStorage.saveContacts(
-                                    //   await ChatDetails.getContacts(),
-                                    // ),
-                                    // await LocalStorage.saveCurrentUser(
-                                    //   await ChatDetails.getCurrUser(
-                                    //     forceRefresh: true,
-                                    //   ),
-                                    // ),
-                                    // updateLoadingState(),
-                                    // Navigator.pushAndRemoveUntil(
-                                    //   context,
-                                    //   MaterialPageRoute(
-                                    //     builder:
-                                    //         (BuildContext context) =>
-                                    //             HomeScreen(),
-                                    //   ),
-                                    //   (route) => false,
-                                    // ),
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder:
-                                            (_) => LoadingScreen(
-                                              message: 'Getting things ready...',
-                                              loadData: () async{
-                                                await LocalStorage.saveContacts(await ChatDetails.getContacts());
-                                                await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
-                                              },
-                                              nextScreen: HomeScreen(),
-                                            ),
-                                      ),
+                        FirebaseAuth.instance.signInWithCredential(credential).then((
+                          value,
+                        ) async {
+                          // Navigator.pop(context);
+                          await isRegistered(widget.number)
+                              ? {
+                                Navigator.pop(context),
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => DoneChecking(
+                                          nextScreen: LoadingScreen(
+                                            message: 'Getting things ready...',
+                                            loadData: () async {
+                                              ChatDetails.updateCurrentUserId();
+                                              await LocalStorage.saveContacts(
+                                                await ChatDetails.getContacts(),
+                                              );
+                                              await LocalStorage.saveCurrentUser(
+                                                await ChatDetails.getCurrUser(
+                                                  forceRefresh: true,
+                                                ),
+                                              );
+                                            },
+                                            nextScreen: HomeScreen(),
+                                          ),
+                                          message: 'Verification Successful!',
+                                        ),
+                                  ),
+                                ),
+                                // Navigator.pushReplacement(
+                                //   context,
+                                //   MaterialPageRoute(
+                                //     builder:
+                                //         (_) => LoadingScreen(
+                                //           message: 'Getting things ready...',
+                                //           loadData: () async{
+                                //             await LocalStorage.saveContacts(await ChatDetails.getContacts());
+                                //             await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
+                                //           },
+                                //           nextScreen: HomeScreen(),
+                                //         ),
+                                //   ),
+                                // ),
+                              }
+                              : {
+                            Navigator.pop(context),
+                            Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) =>
+                                  DoneChecking(
+                                    nextScreen: CreateAccount(
+                                      number: widget.number,
                                     ),
-                                  }
-                                  : Navigator.pushAndRemoveUntil(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (BuildContext context) =>
-                                              CreateAccount(
-                                                number: widget.number,
-                                              ),
-                                    ),
-                                    (route) => false,
-                                  );
-                            });
+                                    message: 'Verification Successful!',
+                                  ),
+                            ),
+                          )};
+                          // Navigator.pushAndRemoveUntil(
+                          // context,
+                          // MaterialPageRoute(
+                          //   builder:
+                          //       (BuildContext context) =>
+                          //       CreateAccount(
+                          //         number: widget.number,
+                          //       ),
+                          // ),
+                          //     (route) => false,
+                          // )
+                        });
                       } catch (ex) {
                         UiHelper.customAlertBox(context, ex.toString());
                       }
@@ -199,7 +238,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
                   ),
                 ),
 
-                SizedBox(height: size.longestSide * 0.05),
+                SizedBox(height: size.height * 0.1),
               ],
             ),
           ),
@@ -208,10 +247,11 @@ class _VerifyOTPState extends State<VerifyOTP> {
     );
   }
 
+  // methods to hide some digits of the number
   getNumber(String number) {
     var length = number.length;
     String hidden = getStarString(length - 10);
-    return "${number.substring(0, 9)}$hidden${number.substring(length - 3)}";
+    return "${number.substring(0, 7)}$hidden${number.substring(length - 3)}";
   }
 
   String getStarString(int length) {
@@ -222,6 +262,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
     return star;
   }
 
+  // check if user is already registered or not
   isRegistered(String phoneNum) async {
     try {
       User? user = FirebaseAuth.instance.currentUser;

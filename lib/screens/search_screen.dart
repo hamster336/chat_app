@@ -92,7 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               children: [
                                 SizedBox(height: size.height * 0.15),
                                 Image(
-                                  image: const AssetImage('images/search.jpg'),
+                                  image: const AssetImage('assets/images/search.jpg'),
                                   height: size.height * 0.33,
                                 ),
                                 const SizedBox(height: 10),

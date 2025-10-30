@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 
 class LoadingScreen extends StatefulWidget {
   final String message;
@@ -23,7 +24,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   void initState() {
     super.initState();
     widget.loadData().then((_) async {
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(const Duration(seconds: 6));
 
       if (mounted) {
         Navigator.pushReplacement(
@@ -45,25 +46,28 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return Scaffold(
-      backgroundColor: Colors.blue.shade50,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(
-              strokeWidth: 3,
-              color: Colors.blue[900],
+            // CircularProgressIndicator(
+            //   strokeWidth: 3,
+            //   color: Colors.blue[800],
+            // ),
+            //
+            // SizedBox(height: size.height * 0.01,),
+
+            Lottie.asset(
+              'assets/animations/robot_searching.json',
+              animate: true
             ),
-
-            SizedBox(height: size.height * 0.01,),
-
             Text(
               widget.message,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 color: Colors.blue.shade700,
                 letterSpacing: 0.5,
               ),
