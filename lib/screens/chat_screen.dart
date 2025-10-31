@@ -1,5 +1,6 @@
 import 'package:chat_app/models/message_card.dart';
 import 'package:chat_app/screens/contact_profile_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/chat_details.dart';
@@ -22,14 +23,21 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   List<Message> _message = [];
-  TextEditingController textController = TextEditingController();
+  final TextEditingController _textController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  final _scrollController = ScrollController();
+
   late ChatUser currentUser;
   bool isLoading = false;
   bool isTyping = false;
 
+  late Stream<QuerySnapshot<Map<String, dynamic>>> _msgStream;
+
   @override
   void dispose() {
-    textController.dispose();
+    _textController.dispose();
+    _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -37,8 +45,13 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _loadDetails();
-    textController.addListener(() {
-      final isCurrentlyTyping = textController.text.trim().isNotEmpty;
+
+    // creating msg stream outside the build
+    _msgStream = ChatDetails.getAllMessages(widget.otherUser);
+
+
+    _textController.addListener(() {
+      final isCurrentlyTyping = _textController.text.trim().isNotEmpty;
       if (isCurrentlyTyping != isTyping) {
         setState(() => isTyping = isCurrentlyTyping);
       }
@@ -76,7 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               Expanded(
                 child: StreamBuilder(
-                  stream: ChatDetails.getAllMessages(widget.otherUser),
+                  stream: _msgStream,
                   builder: (context, snapshot) {
                     switch (snapshot.connectionState) {
                       case ConnectionState.none:
@@ -88,20 +101,34 @@ class _ChatScreenState extends State<ChatScreen> {
                         final data = snapshot.data?.docs;
                         _message = data?.map((e) => Message.fromJson(e.data())).toList() ?? [];
 
+                        if(_message.isEmpty) return const Center(child: Text('Sayy Hii!! 👋'));
 
-                        if (_message.isNotEmpty) {
-                          return ListView.builder(
-                            itemCount: _message.length,
-                            itemBuilder: (context, index) {
-                              return MessageCard(
-                                message: _message[index],
-                                size: size,
-                              );
-                            },
-                          );
-                        } else {
-                          return const Center(child: Text('Sayy Hii!! 👋'));
-                        }
+                        // Added: auto-scroll when new messages arrive
+                        // WidgetsBinding.instance.addPostFrameCallback((_) {
+                        //   if (_scrollController.hasClients) {
+                        //     _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                        //   }
+                        // });
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_scrollController.hasClients) {
+                            _scrollController.animateTo(
+                              _scrollController.position.maxScrollExtent,
+                              duration: const Duration(milliseconds: 300), // smooth scroll duration
+                              curve: Curves.easeOut, // easing curve for natural motion
+                            );
+                          }
+                        });
+
+                        return ListView.builder(
+                          controller: _scrollController,
+                          itemCount: _message.length,
+                          itemBuilder: (context, index) {
+                            return MessageCard(
+                              message: _message[index],
+                              size: size,
+                            );
+                          },
+                        );
                     }
                   },
                 ),
@@ -128,7 +155,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
                             Expanded(
                               child: TextField(
-                                controller: textController,
+                                focusNode: _focusNode,
+                                controller: _textController,
                                 decoration: InputDecoration(
                                   hintText: 'Send a message',
                                   border: InputBorder.none,
@@ -150,10 +178,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     const SizedBox(width: 4),
                     IconButton(
                       onPressed: () {
-                        String msg = textController.text.trim();
+                        final msg = _textController.text.trim();
                         if(msg.isNotEmpty){
                           ChatDetails.sendMessage(msg, widget.otherUser);
-                          textController.clear();
+                          _textController.clear();
                         }
                       },
                       icon: Icon(Icons.send, size: 30),
@@ -235,7 +263,7 @@ class _ChatScreenState extends State<ChatScreen> {
           style: IconButton.styleFrom(padding: EdgeInsets.zero),
         ),
 
-        // profile picture
+        // profile pict ure
         GestureDetector(
           onTap:
               () => Navigator.push(

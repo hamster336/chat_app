@@ -50,11 +50,11 @@ class _VerifyOTPState extends State<VerifyOTP> {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 25),
-          child: GestureDetector(
-            onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 25),
             child: Column(
               children: [
                 SizedBox(height: (size.height * 0.20)),
@@ -79,6 +79,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
 
                 SizedBox(height: size.height * 0.08),
 
+                // tertiary heading text
                 SizedBox(
                   width: size.width * 0.85,
                   child: Text(
@@ -114,11 +115,12 @@ class _VerifyOTPState extends State<VerifyOTP> {
 
                 SizedBox(height: size.height * 0.06),
 
+                // verify button
                 SizedBox(
                   width: size.width * 0.60,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (otpController.text.toString().trim().isEmpty) {
                         UiHelper.customAlertBox(
                           context,
@@ -126,98 +128,76 @@ class _VerifyOTPState extends State<VerifyOTP> {
                         );
                       }
 
-                      try {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder:
-                              (_) => Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 5,
-                                  color: Colors.blue[200],
-                                ),
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder:
+                            (_) => Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 5,
+                                color: Colors.blue[200],
                               ),
-                        );
+                            ),
+                      );
+
+                      try {
                         PhoneAuthCredential credential =
                             PhoneAuthProvider.credential(
                               verificationId: widget.verificationid,
                               smsCode: otpController.text.toString().trim(),
                             );
-                        FirebaseAuth.instance.signInWithCredential(credential).then((
-                          value,
-                        ) async {
-                          // Navigator.pop(context);
-                          await isRegistered(widget.number)
-                              ? {
-                                Navigator.pop(context),
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => DoneChecking(
-                                          nextScreen: LoadingScreen(
-                                            message: 'Getting things ready...',
-                                            loadData: () async {
-                                              ChatDetails.updateCurrentUserId();
-                                              await LocalStorage.saveContacts(
-                                                await ChatDetails.getContacts(),
-                                              );
-                                              await LocalStorage.saveCurrentUser(
-                                                await ChatDetails.getCurrUser(
-                                                  forceRefresh: true,
-                                                ),
-                                              );
-                                            },
-                                            nextScreen: HomeScreen(),
-                                          ),
-                                          message: 'Verification Successful!',
-                                        ),
-                                  ),
-                                ),
-                                // Navigator.pushReplacement(
-                                //   context,
-                                //   MaterialPageRoute(
-                                //     builder:
-                                //         (_) => LoadingScreen(
-                                //           message: 'Getting things ready...',
-                                //           loadData: () async{
-                                //             await LocalStorage.saveContacts(await ChatDetails.getContacts());
-                                //             await LocalStorage.saveCurrentUser(await ChatDetails.getCurrUser(forceRefresh: true));
-                                //           },
-                                //           nextScreen: HomeScreen(),
-                                //         ),
-                                //   ),
-                                // ),
-                              }
-                              : {
-                            Navigator.pop(context),
-                            Navigator.pushReplacement(
+
+                        await FirebaseAuth.instance.signInWithCredential(
+                          credential,
+                        );
+
+                        final registered = await isRegistered(widget.number);
+
+                        if (registered) {
+                          Navigator.pop(context,); // pop the circular progress indicator
+                          Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
                               builder:
-                                  (_) =>
-                                  DoneChecking(
+                                  (_) => DoneChecking(
+                                    nextScreen: LoadingScreen(
+                                      message: 'Getting things ready...',
+                                      loadData: () async {
+                                        ChatDetails.updateCurrentUserId();
+                                        await LocalStorage.saveContacts(
+                                          await ChatDetails.getContacts(),
+                                        );
+                                        await LocalStorage.saveCurrentUser(
+                                          await ChatDetails.getCurrUser(
+                                            forceRefresh: true,
+                                          ),
+                                        );
+                                      },
+                                      nextScreen: HomeScreen(),
+                                    ),
+                                    message: 'Verification Successful!',
+                                  ),
+                            ),
+                          );
+                        } else {
+                          // navigate to create account screen // pop the circular progress indicator
+                          Navigator.pop(context);
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) => DoneChecking(
                                     nextScreen: CreateAccount(
                                       number: widget.number,
                                     ),
                                     message: 'Verification Successful!',
                                   ),
                             ),
-                          )};
-                          // Navigator.pushAndRemoveUntil(
-                          // context,
-                          // MaterialPageRoute(
-                          //   builder:
-                          //       (BuildContext context) =>
-                          //       CreateAccount(
-                          //         number: widget.number,
-                          //       ),
-                          // ),
-                          //     (route) => false,
-                          // )
-                        });
-                      } catch (ex) {
-                        UiHelper.customAlertBox(context, ex.toString());
+                          );
+                        }
+                      } on FirebaseAuthException catch (ex) {
+                        Navigator.pop(context);
+                        UiHelper.customAlertBox(context, ex.code.toString());
                       }
                     },
                     style: ElevatedButton.styleFrom(

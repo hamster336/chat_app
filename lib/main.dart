@@ -1,9 +1,5 @@
 import 'package:chat_app/models/check_if_logged_in.dart';
 import 'package:chat_app/models/local_storage.dart';
-import 'package:chat_app/screens/done_checking.dart';
-import 'package:chat_app/screens/home_screen.dart';
-import 'package:chat_app/screens/loading_screen.dart';
-import 'package:chat_app/screens/signup_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
