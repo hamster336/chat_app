@@ -103,12 +103,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
                         if(_message.isEmpty) return const Center(child: Text('Sayy Hii!! 👋'));
 
-                        // Added: auto-scroll when new messages arrive
-                        // WidgetsBinding.instance.addPostFrameCallback((_) {
-                        //   if (_scrollController.hasClients) {
-                        //     _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-                        //   }
-                        // });
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (_scrollController.hasClients) {
                             _scrollController.animateTo(
@@ -125,7 +119,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           itemBuilder: (context, index) {
                             return MessageCard(
                               message: _message[index],
-                              size: size,
+                              size: size
                             );
                           },
                         );

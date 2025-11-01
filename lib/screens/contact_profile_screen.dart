@@ -215,7 +215,7 @@ class _ContactProfileScreenState extends State<ContactProfileScreen> {
     );
   }
 
-  _deleteConfirmation() {
+  void _deleteConfirmation() {
     showDialog(
       context: context,
       builder:

@@ -23,7 +23,7 @@ class _DoneCheckingState extends State<DoneChecking> {
             transitionDuration: const Duration(milliseconds: 300),
             pageBuilder: (_, _, _) => widget.nextScreen,
             transitionsBuilder:
-                (_, animation, __, child) =>
+                (_, animation, _, child) =>
                 FadeTransition(opacity: animation, child: child),
           ),
         );

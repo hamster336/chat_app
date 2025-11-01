@@ -27,7 +27,7 @@ class _MessageCardState extends State<MessageCard> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(vertical: widget.size.shortestSide * 0.04),
+          padding: EdgeInsets.symmetric(vertical: widget.size.shortestSide * 0.02),
           child: Row(
             children: [
               SizedBox(width: widget.size.shortestSide * 0.02),
@@ -36,12 +36,10 @@ class _MessageCardState extends State<MessageCard> {
               if(widget.message.read.isEmpty) Icon(Icons.done, color: Colors.grey)
               else Icon(Icons.done_all, color: Colors.blue.shade500),
 
-              // if(widget.message.read.isNotEmpty) Icon(Icons.done_all, color: Colors.blue.shade500),
-
               // sent time
               Text(
                 ChatDetails.formatTime(context: context, time: widget.message.sent),
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: TextStyle(fontSize: 14, color: Colors.black54),
               ),
             ],
           ),
@@ -50,10 +48,13 @@ class _MessageCardState extends State<MessageCard> {
         // messageCard
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(widget.size.shortestSide * 0.03),
+            padding: EdgeInsets.symmetric(
+                horizontal: widget.size.shortestSide * 0.03,
+                vertical: widget.size.shortestSide * 0.02
+            ),
             margin: EdgeInsets.symmetric(
                 horizontal: widget.size.shortestSide * 0.025,
-                vertical: widget.size.shortestSide * 0.03
+                vertical: widget.size.shortestSide * 0.01
             ),
             decoration: BoxDecoration(
               color: Colors.blue.shade100,
@@ -69,7 +70,7 @@ class _MessageCardState extends State<MessageCard> {
             ),
             child: Text(
               widget.message.msg,
-              style: TextStyle(fontSize: 17, color: Colors.black),
+              style: TextStyle(fontSize: 16, color: Colors.black),
             ),
           ),
         ),
@@ -91,10 +92,13 @@ class _MessageCardState extends State<MessageCard> {
         // messageCard
         Flexible(
           child: Container(
-            padding: EdgeInsets.all(widget.size.shortestSide * 0.03),
+            padding: EdgeInsets.symmetric(
+                horizontal: widget.size.shortestSide * 0.03,
+                vertical: widget.size.shortestSide * 0.02
+            ),
             margin: EdgeInsets.symmetric(
                 horizontal: widget.size.shortestSide * 0.025,
-                vertical: widget.size.shortestSide * 0.03
+                vertical: widget.size.shortestSide * 0.01
             ),
             decoration: BoxDecoration(
               color: Colors.green.shade100,
@@ -110,19 +114,19 @@ class _MessageCardState extends State<MessageCard> {
             ),
             child: Text(
               widget.message.msg,
-              style: TextStyle(fontSize: 17, color: Colors.black),
+              style: TextStyle(fontSize: 16, color: Colors.black),
             ),
           ),
         ),
 
         // msg sent time
         Padding(
-          padding: EdgeInsets.symmetric(vertical: widget.size.shortestSide * 0.04),
+          padding: EdgeInsets.symmetric(vertical: widget.size.shortestSide * 0.02),
           child: Row(
             children: [
               Text(
                 ChatDetails.formatTime(context: context, time: widget.message.sent),
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: TextStyle(fontSize: 14, color: Colors.black54),
               ),
 
               SizedBox(width: widget.size.shortestSide * 0.02),

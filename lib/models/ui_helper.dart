@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class UiHelper {
-  static customTextField(
+  static Widget customTextField(
     TextEditingController controller,
     String text,
     IconData icon,
@@ -21,7 +21,7 @@ class UiHelper {
     );
   }
 
-  static customAlertBox(BuildContext context, String text) {
+  static Future customAlertBox(BuildContext context, String text) {
     return showDialog(
       // barrierColor: Colors.black12,
       context: context,
@@ -46,7 +46,7 @@ class UiHelper {
     );
   }
 
-  static customBottomSheet(BuildContext context, String text) {
+  static Future customBottomSheet(BuildContext context, String text) {
     final size = MediaQuery.of(context).size;
     return showModalBottomSheet(
       context: context,
@@ -102,8 +102,6 @@ class UiHelper {
         Color textColor = Colors.black87,
         Duration duration = const Duration(seconds: 3),
       }) {
-    final size = MediaQuery.of(context).size;
-
     final snackBar = SnackBar(
       content: Center(
         child: Row(

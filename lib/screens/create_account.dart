@@ -73,8 +73,10 @@ class _CreateAccountState extends State<CreateAccount> {
                             children: [
                               ListTile(
                                 onTap: () async {
+                                  final navContext = Navigator.of(context);
                                   await pickImage(ImageSource.camera);
-                                  Navigator.pop(context);
+                                  if(!mounted) return;
+                                  navContext.pop();
                                 },
                                 leading: Icon(Icons.camera),
                                 title: Text("Camera"),
@@ -82,8 +84,9 @@ class _CreateAccountState extends State<CreateAccount> {
 
                               ListTile(
                                 onTap: () async {
+                                  final navContext = Navigator.of(context);
                                   await pickImage(ImageSource.gallery);
-                                  Navigator.pop(context);
+                                  navContext.pop();
                                 },
                                 leading: Icon(Icons.browse_gallery),
                                 title: Text("Gallery"),
@@ -199,7 +202,7 @@ class _CreateAccountState extends State<CreateAccount> {
     );
   }
 
-  setName(String name) {
+  String? setName(String name) {
     if (name.trim().isEmpty) {
       UiHelper.customAlertBox(context, "Name cannot be empty!");
       return null;
@@ -207,14 +210,14 @@ class _CreateAccountState extends State<CreateAccount> {
     return name.trim();
   }
 
-  setBio(String text) {
+  String? setBio(String text) {
     if (text.trim().isEmpty) {
       return null;
     }
     return text.trim();
   }
 
-  pickImage(ImageSource source) async {
+  Future<void> pickImage(ImageSource source) async {
     try {
       final image = await ImagePicker().pickImage(source: source);
       if (image == null) return;
@@ -227,7 +230,7 @@ class _CreateAccountState extends State<CreateAccount> {
     }
   }
 
-  saveData(String name, String num, String? bio) async {
+  Future<void> saveData(String name, String num, String? bio) async {
     // if(name == null) return;
 
     List<String> searchKeywords = generateSearchKeywords(name.toLowerCase());
@@ -325,7 +328,7 @@ class _CreateAccountState extends State<CreateAccount> {
     }
   }
 
-  generateSearchKeywords(String tempName) {
+  List<String> generateSearchKeywords(String tempName) {
     List<String> keywords = [];
     for (int i = 0; i < tempName.length; i++) {
       if (tempName[i] == " ") {

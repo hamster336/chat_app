@@ -29,12 +29,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          // MaterialPageRoute(builder: (_) => widget.nextScreen)
           PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 600),
+            transitionDuration: const Duration(milliseconds: 300),
             pageBuilder: (_, _, _) => widget.nextScreen,
             transitionsBuilder:
-                (_, animation, __, child) =>
+                (_, animation, _, child) =>
                     FadeTransition(opacity: animation, child: child),
           ),
         );
@@ -51,16 +50,10 @@ class _LoadingScreenState extends State<LoadingScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // CircularProgressIndicator(
-            //   strokeWidth: 3,
-            //   color: Colors.blue[800],
-            // ),
-            //
-            // SizedBox(height: size.height * 0.01,),
-
             Lottie.asset(
               'assets/animations/robot_searching.json',
-              animate: true
+              animate: true,
+              width: size.shortestSide * 0.65
             ),
             Text(
               widget.message,

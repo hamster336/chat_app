@@ -126,7 +126,7 @@ class ChatDetails {
   }
 
   // chats (collection) -----> chatRoomId (doc) -----> messages (collection) -----> message (doc)
-  static generateChatRoomId(String otherUser) {
+  static String generateChatRoomId(String otherUser) {
     List<String> userIds = [currentUserId, otherUser];
     userIds.sort();
     return userIds.join('_');
@@ -217,7 +217,7 @@ class ChatDetails {
     }
   }
 
-  static getDate(String? time) {
+  static String getDate(String? time) {
     if(time == null) return '';
 
     final date = DateTime.fromMillisecondsSinceEpoch(int.parse(time));

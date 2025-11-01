@@ -126,8 +126,12 @@ class _VerifyOTPState extends State<VerifyOTP> {
                           context,
                           'Please enter the OTP!',
                         );
+                        return;
                       }
 
+                      final nav = Navigator.of(context);    // capture navigator before async
+
+                      // show loading indicator
                       showDialog(
                         context: context,
                         barrierDismissible: false,
@@ -153,10 +157,13 @@ class _VerifyOTPState extends State<VerifyOTP> {
 
                         final registered = await isRegistered(widget.number);
 
+                        if(!mounted) return;
+
+                        nav.pop();  // pop loading indicator
+
                         if (registered) {
-                          Navigator.pop(context,); // pop the circular progress indicator
-                          Navigator.pushReplacement(
-                            context,
+                          // Navigator.pop(context); // pop the circular progress indicator
+                          nav.pushReplacement(
                             MaterialPageRoute(
                               builder:
                                   (_) => DoneChecking(
@@ -180,10 +187,9 @@ class _VerifyOTPState extends State<VerifyOTP> {
                             ),
                           );
                         } else {
-                          // navigate to create account screen // pop the circular progress indicator
-                          Navigator.pop(context);
-                          Navigator.pushReplacement(
-                            context,
+                          // Navigator.pop(context);
+                          // navigate to create account screen
+                          nav.pushReplacement(
                             MaterialPageRoute(
                               builder:
                                   (_) => DoneChecking(
@@ -196,8 +202,9 @@ class _VerifyOTPState extends State<VerifyOTP> {
                           );
                         }
                       } on FirebaseAuthException catch (ex) {
-                        Navigator.pop(context);
-                        UiHelper.customAlertBox(context, ex.code.toString());
+                        if(!mounted) return;
+                        nav.pop(); // pop the loading indicator
+                        UiHelper.customAlertBox(nav.context, ex.code.toString());
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -228,7 +235,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
   }
 
   // methods to hide some digits of the number
-  getNumber(String number) {
+  String getNumber(String number) {
     var length = number.length;
     String hidden = getStarString(length - 10);
     return "${number.substring(0, 7)}$hidden${number.substring(length - 3)}";
@@ -243,7 +250,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
   }
 
   // check if user is already registered or not
-  isRegistered(String phoneNum) async {
+   Future<bool> isRegistered(String phoneNum) async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
 
@@ -260,6 +267,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
       }
     } catch (ex) {
       log(ex.toString());
+      rethrow;
     }
   }
 }
