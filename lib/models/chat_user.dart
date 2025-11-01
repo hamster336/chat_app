@@ -1,7 +1,7 @@
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-part 'chat_user.g.dart';
 
+part 'chat_user.g.dart';
 
 @HiveType(typeId: 0)
 class ChatUser extends HiveObject{

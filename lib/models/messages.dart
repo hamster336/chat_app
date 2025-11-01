@@ -1,6 +1,8 @@
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+part 'messages.g.dart';
+
 @HiveType(typeId: 1)
 class Message extends HiveObject{
 
@@ -9,7 +11,7 @@ class Message extends HiveObject{
   @HiveField(2) late final String fromId;
   @HiveField(3) late final String toId;
   @HiveField(4) late final String sent;
-  @HiveField(5) late final Type type;
+  @HiveField(5) late final MessageType type;
 
   Message({
     required this.msg,
@@ -26,7 +28,7 @@ class Message extends HiveObject{
     read = json['read'].toString();
     fromId = json['from_id'].toString();
     toId = json['to_id'].toString();
-    type = json['type'].toString() == Type.image.name? Type.image : Type.text;
+    type = json['type'].toString() == MessageType.image.name? MessageType.image : MessageType.text;
     sent = json['sent'].toString();
   }
 
@@ -44,4 +46,4 @@ class Message extends HiveObject{
 
 
 @HiveType(typeId: 2)
-enum Type{@HiveField(0)text, @HiveField(1) image}
+enum MessageType{@HiveField(0)text, @HiveField(1) image}

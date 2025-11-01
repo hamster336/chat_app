@@ -20,7 +20,7 @@ class _DoneCheckingState extends State<DoneChecking> {
           context,
           // MaterialPageRoute(builder: (context) => widget.nextScreen)
           PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 300),
+            transitionDuration: const Duration(milliseconds: 400),
             pageBuilder: (_, _, _) => widget.nextScreen,
             transitionsBuilder:
                 (_, animation, _, child) =>

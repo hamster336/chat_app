@@ -30,7 +30,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 300),
+            transitionDuration: const Duration(milliseconds: 500),
             pageBuilder: (_, _, _) => widget.nextScreen,
             transitionsBuilder:
                 (_, animation, _, child) =>

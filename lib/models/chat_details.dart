@@ -152,12 +152,9 @@ class ChatDetails {
       read: '',
       fromId: currentUserId,
       toId: otherUser.uid!,
-      type: Type.text,
+      type: MessageType.text,
       sent: time,
     );
-
-    // final ref = FirebaseFirestore.instance.collection('chats/$chatRoomId/messages');
-    // await ref.doc(time).set(message.toJson());
 
     final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatRoomId);
 
