@@ -307,7 +307,7 @@ class _CreateAccountState extends State<CreateAccount> {
                             ChatDetails.updateCurrentUserId();
                             await LocalStorage.saveContacts(await ChatDetails.getContacts());
                             await LocalStorage.saveCurrentUser(
-                              await ChatDetails.getCurrUser(forceRefresh: true),
+                              await ChatDetails.fetchCurrentUser(),
                             );
                           },
                           nextScreen: HomeScreen(),

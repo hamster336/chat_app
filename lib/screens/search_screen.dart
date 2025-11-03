@@ -35,7 +35,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _loadDetails() async {
-    ChatUser user = await ChatDetails.getCurrUser();
+    ChatUser user = await ChatDetails.fetchCurrentUser();
     setState(() => currentUser = user);
   }
 

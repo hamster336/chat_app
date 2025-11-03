@@ -1,3 +1,4 @@
+import 'package:chat_app/models/local_storage.dart';
 import 'package:chat_app/models/message_card.dart';
 import 'package:chat_app/screens/contact_profile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -60,7 +61,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _loadDetails() async {
     _updateLoadingState(value: true);
-    currentUser = await ChatDetails.getCurrUser();
+    currentUser = await ChatDetails.fetchCurrentUser();
+    _message = LocalStorage.getCachedMessages(widget.chatRoomId);
     _updateLoadingState();
   }
 

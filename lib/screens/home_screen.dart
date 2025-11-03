@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  Map<String, dynamic> lastMessages = {};
   TextEditingController searchController = TextEditingController();
   ChatUser? currentUser = LocalStorage.getCurrentUser();
   List<ChatUser> contacts = [];
@@ -35,9 +36,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _contactList();
+    _updateLastMessages(contacts);
 
     if (widget.forceRefresh) {
       _updateUsers();
+      _updateLastMessages(contacts);
     }
   }
 
@@ -50,8 +53,17 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
     final fetchedContacts = await ChatDetails.getContacts(forceRefresh: true);
-    updateLoadingState();
     contacts = fetchedContacts;
+    updateLoadingState();
+  }
+
+  void _updateLastMessages(List<ChatUser> contactList) async{
+    updateLoadingState(value: true);
+    for(var contact in contactList){
+      final msg = await ChatDetails.getLastMessage(contact);
+      if(msg != null) lastMessages[contact.uid!] = msg;
+    }
+    updateLoadingState();
   }
 
   void updateLoadingState({bool value = false}) {
@@ -215,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // add contacts
+      // add contacts button
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -239,6 +251,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Card userCard(ChatUser otherUser) {
+    final msgData = lastMessages[otherUser.uid] ?? {};
+    final sender = msgData['lastMessageFrom'] == otherUser.uid ? getFirstName(otherUser.name) : 'You';
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
       elevation: 1,
@@ -255,7 +269,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 otherUser: otherUser,
                 chatRoomId: ChatDetails.generateChatRoomId(otherUser.uid!),
               ),
-              // childCurrent: HomeScreen(),
             ),
           );
         },
@@ -269,17 +282,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
         title: Text(
           otherUser.name!,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
         ),
 
-        subtitle: Text('Last Message', maxLines: 1),
+        subtitle: (msgData['msg'] != null)
+            ? Text('$sender: ${msgData['msg']}' ,maxLines: 1, overflow: TextOverflow.ellipsis)
+            : Text('Tap to begin conversation', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade600)),
 
         trailing: Text(
-          '1 Jan',
+          msgData['msgTime'] ?? 'New',
           style: TextStyle(
             fontSize: 16,
-            color: Colors.grey,
-            fontWeight: FontWeight.w400,
+            color: Colors.black54,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -289,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _updateUsers() async {
     final fetchedContacts = await ChatDetails.getContacts(forceRefresh: true);
 
-    final fetchedUser = await ChatDetails.getCurrUser(forceRefresh: true);
+    final fetchedUser = await ChatDetails.fetchCurrentUser();
 
     if (mounted) {
       setState(() => contacts = fetchedContacts);

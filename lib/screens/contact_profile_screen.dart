@@ -278,7 +278,7 @@ class _ContactProfileScreenState extends State<ContactProfileScreen> {
   }
 
   void _deleteContact(String contactUid) async {
-    final ChatUser currentUser = await ChatDetails.getCurrUser();
+    final ChatUser currentUser = await ChatDetails.fetchCurrentUser();
     currentUser.contacts!.remove(contactUid);
 
     // Update Firestore

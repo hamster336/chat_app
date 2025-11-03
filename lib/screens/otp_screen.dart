@@ -171,14 +171,9 @@ class _VerifyOTPState extends State<VerifyOTP> {
                                       message: 'Getting things ready...',
                                       loadData: () async {
                                         ChatDetails.updateCurrentUserId();
-                                        await LocalStorage.saveContacts(
-                                          await ChatDetails.getContacts(),
-                                        );
-                                        await LocalStorage.saveCurrentUser(
-                                          await ChatDetails.getCurrUser(
-                                            forceRefresh: true,
-                                          ),
-                                        );
+                                        await LocalStorage.saveContacts(await ChatDetails.getContacts());
+                                        await LocalStorage.saveCurrentUser(await ChatDetails.fetchCurrentUser());
+
                                       },
                                       nextScreen: HomeScreen(),
                                     ),

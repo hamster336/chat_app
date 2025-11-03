@@ -13,8 +13,10 @@ class ChatDetails {
     currentUserId = FirebaseAuth.instance.currentUser!.uid;
   }
 
+  /// get cached currentUser
   static ChatUser? currentUser = LocalStorage.getCurrentUser();
 
+  /// get details of a user
   static Future<ChatUser> getDetails(String userId, {bool forceRefresh = false}) async {
     if (!forceRefresh) {
       ChatUser? cachedUser = LocalStorage.getContact(userId);
@@ -42,6 +44,7 @@ class ChatDetails {
     }
   }
 
+  /// get contacts of a user
   static Future<List<ChatUser>> getContacts({bool forceRefresh = false}) async {
     // Try to get from cache first
     if (!forceRefresh) {
@@ -95,14 +98,8 @@ class ChatDetails {
     }
   }
 
-  static Future<ChatUser> getCurrUser({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
-      ChatUser? cachedUser = LocalStorage.getCurrentUser();
-      if (cachedUser != null) {
-        return cachedUser;
-      }
-    }
-
+  ///
+  static Future<ChatUser> fetchCurrentUser() async {
     try {
       DocumentSnapshot doc =
           await FirebaseFirestore.instance
@@ -132,14 +129,14 @@ class ChatDetails {
     return userIds.join('_');
   }
 
-  // get all messages from a chat room
+  /// get all messages from a chat room
   static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser user) {
     return FirebaseFirestore.instance
         .collection('chats/${generateChatRoomId(user.uid!)}/messages/')
         .snapshots();
   }
 
-  // send a message
+  /// send a message
   static Future<void> sendMessage(String msg, ChatUser otherUser) async {
     final chatRoomId = generateChatRoomId(otherUser.uid!);
 
@@ -170,13 +167,13 @@ class ChatDetails {
     }, SetOptions(merge: true));
   }
 
-  // format time into readable format
+  /// format time into readable format
   static String formatTime({required BuildContext context, required String time}){
     final date = DateTime.fromMillisecondsSinceEpoch(int.parse(time));
     return TimeOfDay.fromDateTime(date).format(context);
   }
 
-  // update the status of the message
+  /// update the status of the message
   static Future<void> updateMessageStatus(Message message) async{
     FirebaseFirestore.instance.
         collection('chats/${generateChatRoomId(message.fromId)}/messages/').doc(message.sent).update({
@@ -184,8 +181,8 @@ class ChatDetails {
         });
   }
 
-  // get the last message of each contact
-  static Future<Map<String, dynamic>> getLastMessage(ChatUser user) async{
+  /// get the last message of each contact
+  static Future<Map<String, dynamic>?> getLastMessage(ChatUser user) async{
     final chatRoomId = generateChatRoomId(user.uid!);
     final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatRoomId);
 
@@ -196,24 +193,21 @@ class ChatDetails {
       if(data != null){
         return {
           'msg' : data['lastMessage'],
+          'msgFrom' : data['lastMessageFrom'],
           'msgTime' : getDate(data['lastMessageTime']),
-          'msgFrom' : data['lastMessageFrom']
+          'timeStamp' : data['lastMessageTime'],
         };
       }else{
-        // return null;
-        return {
-          'msg' : 'Tap to begin conversation',
-          'msgTime' : '',
-          'msgFrom' : ''
-        };
+        return null;
       }
 
     }catch (ex) {
       log(ex.toString());
-      rethrow;
+      return null;
     }
   }
 
+  /// get formated time
   static String getDate(String? time) {
     if(time == null) return '';
 
