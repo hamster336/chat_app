@@ -98,7 +98,50 @@ class ChatDetails {
     }
   }
 
-  ///
+  /// get Contact Stream
+  static Stream<List<ChatUser>> getContactStream(){
+    final userDocRef = FirebaseFirestore.instance.collection('Users').doc(currentUserId);
+
+    return userDocRef.snapshots(). asyncMap((snapshot) async{
+      if(!snapshot.exists) return [];
+
+      // print('snapshot exists');
+      // print('snapshot: ${snapshot.data()?.keys}');
+      final data = snapshot.data() ?? {};
+      // print('data: ${data.keys}');
+      // print('list: ${data['Contacts']}');
+      final contactIds = (data['Contacts']);
+      // print('contacts: ${contactIds.length}');
+      if(contactIds.isEmpty) return [];
+
+      List<ChatUser> allContacts = [];
+
+      for (int i = 0; i < contactIds.length; i += 10) {
+        List<String> batch =
+        contactIds.sublist(i, (i + 10 > contactIds.length) ? contactIds.length : i + 10)
+            .cast<String>();
+
+        QuerySnapshot batchSnapshot =
+        await FirebaseFirestore.instance
+            .collection('Users')
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+
+        for (var doc in batchSnapshot.docs) {
+          final ChatUser contactData = ChatUser.fromJson(
+            doc.data() as Map<String, dynamic>,
+          );
+          contactData.uid = doc.id;
+          allContacts.add(contactData);
+          // print(allContacts.length);
+        }
+      }
+      // print(allContacts.length);
+      return allContacts;
+    });
+  }
+
+  /// get current user info from firestore
   static Future<ChatUser> fetchCurrentUser() async {
     try {
       DocumentSnapshot doc =
@@ -181,7 +224,7 @@ class ChatDetails {
         });
   }
 
-  /// get the last message of each contact
+  /// get the last message of single contact
   static Future<Map<String, dynamic>?> getLastMessage(ChatUser user) async{
     final chatRoomId = generateChatRoomId(user.uid!);
     final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatRoomId);
@@ -207,6 +250,16 @@ class ChatDetails {
     }
   }
 
+  /// update last message of all the contacts to show in the home screen
+  static Future<Map<String, dynamic>> updateLastMessages(List<ChatUser> list) async{
+    Map<String, dynamic> lastMessages = {};
+    for(var contact in list){
+      final msg = await ChatDetails.getLastMessage(contact);
+      if(msg != null) lastMessages[contact.uid!] = msg;
+    }
+    return lastMessages;
+  }
+
   /// get formated time
   static String getDate(String? time) {
     if(time == null) return '';
@@ -225,4 +278,5 @@ class ChatDetails {
 
     return '${date.day} ${months[date.month - 1]}';
   }
+
 }

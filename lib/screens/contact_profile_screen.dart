@@ -258,7 +258,7 @@ class _ContactProfileScreenState extends State<ContactProfileScreen> {
 
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (_) => HomeScreen(forceRefresh: true)),
+                    MaterialPageRoute(builder: (_) => HomeScreen()),
                     (route) => false,
                   );
 
