@@ -91,7 +91,7 @@ class LocalStorage {
 
   /// Get all cached messages for a chatRoom
   static List<Message> getCachedMessages(String chatRoomId){
-    final box = Hive.box(_messagesBox);
+    final box = Hive.box<List>(_messagesBox);
     return (box.get(chatRoomId, defaultValue: <Message>[]) as List).cast<Message>();
   }
 

@@ -252,7 +252,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Card userCard(ChatUser otherUser) {
     final msgData = lastMessages[otherUser.uid] ?? {};
-    final sender = msgData['lastMessageFrom'] == otherUser.uid ? getFirstName(otherUser.name) : 'You';
+    String sender = '';
+    if(msgData != null){
+      sender = (msgData['msgFrom'] == ChatDetails.currentUserId) ? 'You' : getFirstName(otherUser.name) ;
+    }
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
       elevation: 1,

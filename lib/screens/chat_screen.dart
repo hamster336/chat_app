@@ -50,7 +50,6 @@ class _ChatScreenState extends State<ChatScreen> {
     // creating msg stream outside the build
     _msgStream = ChatDetails.getAllMessages(widget.otherUser);
 
-
     _textController.addListener(() {
       final isCurrentlyTyping = _textController.text.trim().isNotEmpty;
       if (isCurrentlyTyping != isTyping) {
