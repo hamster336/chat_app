@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:chat_app/models/chat_details.dart';
 import 'package:chat_app/screens/search_screen.dart';
 import 'package:chat_app/screens/user_profile_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 
@@ -26,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ChatUser> contacts = [];
   List<ChatUser> filteredContacts = [];
   bool isLoading = false;
+  bool showStreamData = false;
 
   @override
   void dispose() {
@@ -36,35 +39,40 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // _contactList();
-    _contactStream = ChatDetails.getContactStream();
+    _contactList();
+    _updateLastMessages(contacts);
+    // _contactStream = ChatDetails.getContactStream();
+
+    // Future.delayed(const Duration(seconds: 3), (){
+    //   if(mounted) setState(() => showStreamData = true);
+    // });
+
     // _updateLastMessages();
     if (widget.forceRefresh) {
-      // _updateUsers();
-      // _updateLastMessages(contacts);
+      _updateUsers();
+      _updateLastMessages(contacts);
     }
   }
 
-  // void _contactList() async {
-  //   updateLoadingState(value: true);
-  //   List<ChatUser> cachedContacts = LocalStorage.getCachedContacts();
-  //   if (cachedContacts.isNotEmpty) {
-  //     contacts = cachedContacts;
-  //     updateLoadingState();
-  //     return;
-  //   }
-  //   final fetchedContacts = await ChatDetails.getContacts(forceRefresh: true);
-  //   contacts = fetchedContacts;
-  //   updateLoadingState();
-  // }
+  void _contactList() async {
+    updateLoadingState(value: true);
+    List<ChatUser> cachedContacts = LocalStorage.getCachedContacts();
+    if (cachedContacts.isNotEmpty) {
+      contacts = cachedContacts;
+      updateLoadingState();
+      return;
+    }
+    final fetchedContacts = await ChatDetails.getContacts(forceRefresh: true);
+    contacts = fetchedContacts;
+    updateLoadingState();
+  }
 
   void _updateLastMessages(List<ChatUser> list) async{
     updateLoadingState(value: true);
-    lastMessages = (await ChatDetails.updateLastMessages(list));
-    // for(var contact in contactList){
-    //   final msg = await ChatDetails.getLastMessage(contact);
-    //   if(msg != null) lastMessages[contact.uid!] = msg;
-    // }
+    for(var contact in list){
+      final msg = await ChatDetails.getLastMessage(contact);
+      if(msg != null) lastMessages[contact.uid!] = msg;
+    }
     updateLoadingState();
   }
 
@@ -154,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SearchBar(
                 controller: searchController,
-                onTap: () => log(ChatDetails.currentUserId),
+                onTap: () => {},
                 onChanged: (_) async {},
                 backgroundColor: WidgetStateProperty.all(Colors.grey[200]),
                 elevation: WidgetStateProperty.all(0),
@@ -174,93 +182,53 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Theme.of(context).canvasColor,
                   child: SizedBox(
                     width: size.width,
-                    child: StreamBuilder(
-                        stream: _contactStream,
-                        builder: (context, snapshot) {
-                          if(snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
-                          if(!snapshot.hasData){
-                            return
-                              Center(
-                                child: Column(
-                                  children: [
-                                    SizedBox(height: size.height * 0.15),
-                                    Image.asset(
-                                        'assets/images/message2.jpg',
-                                      height: size.height * 0.33,
-                                      width: size.width * 0.85,
-                                    ),
-
-                                    const SizedBox(height: 10),
-
-                                    Text(
-                                      'Add contacts to connect with people',
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w400,
+                    child:
+                        (isLoading)
+                            ? Center(child: CircularProgressIndicator())
+                            : (contacts.isEmpty)
+                            ? RefreshIndicator(
+                              onRefresh: () async => _updateUsers(),
+                              child: SingleChildScrollView(
+                                physics: AlwaysScrollableScrollPhysics(),
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      SizedBox(height: size.height * 0.15),
+                                      Image(
+                                        image: const AssetImage(
+                                          'assets/images/message2.jpg',
+                                        ),
+                                        height: size.height * 0.33,
+                                        width: size.width * 0.85,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                          }
 
-                          final userContacts = snapshot.data!;
-                          _updateLastMessages(userContacts);
-                          return ListView.builder(
-                              padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-                              itemCount: userContacts.length,
-                              itemBuilder: (context, index) {
-                                return userCard(userContacts[index]);
+                                      const SizedBox(height: 10),
+
+                                      Text(
+                                        'Add contacts to connect with people',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )
+                            : RefreshIndicator(
+                              onRefresh: () async => _updateUsers(),
+                              child: ListView.builder(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 5,
+                                ),
+                                itemCount: contacts.length,
+                                itemBuilder: (context, index) {
+                                  return userCard(contacts[index]);
                                 },
-                          );
-                        }
-                    )
-                        // (isLoading)
-                        //     ? Center(child: CircularProgressIndicator())
-                        //     : (contacts.isEmpty)
-                        //     ? RefreshIndicator(
-                        //       onRefresh: () async => _updateUsers(),
-                        //       child: SingleChildScrollView(
-                        //         physics: AlwaysScrollableScrollPhysics(),
-                        //         child: Center(
-                        //           child: Column(
-                        //             children: [
-                        //               SizedBox(height: size.height * 0.15),
-                        //               Image(
-                        //                 image: const AssetImage(
-                        //                   'assets/images/message2.jpg',
-                        //                 ),
-                        //                 height: size.height * 0.33,
-                        //                 width: size.width * 0.85,
-                        //               ),
-                        //
-                        //               const SizedBox(height: 10),
-                        //
-                        //               Text(
-                        //                 'Add contacts to connect with people',
-                        //                 style: TextStyle(
-                        //                   fontSize: 17,
-                        //                   fontWeight: FontWeight.w400,
-                        //                 ),
-                        //               ),
-                        //             ],
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     )
-                        //     : RefreshIndicator(
-                        //       onRefresh: () async => _updateUsers(),
-                        //       child: ListView.builder(
-                        //         padding: EdgeInsets.symmetric(
-                        //           horizontal: 5,
-                        //           vertical: 5,
-                        //         ),
-                        //         itemCount: contacts.length,
-                        //         itemBuilder: (context, index) {
-                        //           return userCard(contacts[index]);
-                        //         },
-                        //       ),
-                        //     ),
+                              ),
+                            ),
                   ),
                 ),
               ),
@@ -346,22 +314,44 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // void _updateUsers() async {
-  //   final fetchedContacts = await ChatDetails.getContacts(forceRefresh: true);
-  //
-  //   final fetchedUser = await ChatDetails.fetchCurrentUser();
-  //
-  //   if (mounted) {
-  //     setState(() => contacts = fetchedContacts);
-  //     LocalStorage.saveCurrentUser(fetchedUser);
-  //   }
-  // }
+  void _updateUsers() async {
+    final fetchedContacts = await ChatDetails.getContacts(forceRefresh: true);
+    final fetchedUser = await ChatDetails.fetchCurrentUser();
+    _updateLastMessages(fetchedContacts);
 
+    if (mounted) {
+      setState(() => contacts = fetchedContacts);
+      LocalStorage.saveCurrentUser(fetchedUser);
+    }
+  }
+
+  // get the first name of the user
   String getFirstName(String? name) {
     if (name == null) return 'User';
 
     int index = name.indexOf(' ');
     if (index == -1) index = name.length;
     return name.substring(0, index);
+  }
+
+  Widget _showContacts(List<ChatUser> list, {String? text}){
+    return Column(
+      children: [
+        if(text != null) Padding(padding: EdgeInsets.only(top: 5),
+          child: Text(text,
+            style: TextStyle(fontSize: 15, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              return userCard(list[index]);
+            },
+          ),
+        ),
+      ],
+    );
   }
 }

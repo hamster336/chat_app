@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:chat_app/models/local_storage.dart';
 import 'package:chat_app/models/message_card.dart';
 import 'package:chat_app/screens/contact_profile_screen.dart';
@@ -61,7 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _loadDetails() async {
     _updateLoadingState(value: true);
     currentUser = await ChatDetails.fetchCurrentUser();
-    _message = LocalStorage.getCachedMessages(widget.chatRoomId);
+    // _message = LocalStorage.getCachedMessages(widget.chatRoomId);
     _updateLoadingState();
   }
 
@@ -95,7 +97,20 @@ class _ChatScreenState extends State<ChatScreen> {
                     switch (snapshot.connectionState) {
                       case ConnectionState.none:
                       case ConnectionState.waiting:
+                        // _message = LocalStorage.getCachedMessages(widget.chatRoomId);
                         return const Center(child: CircularProgressIndicator());
+                        // _message = LocalStorage.getCachedMessages(widget.chatRoomId);
+                        // log('Cached messages');
+                        // return ListView.builder(
+                        //   controller: _scrollController,
+                        //   itemCount: _message.length,
+                        //   itemBuilder: (context, index) {
+                        //     return MessageCard(
+                        //         message: _message[index],
+                        //         size: size
+                        //     );
+                        //   },
+                        // );
 
                       case ConnectionState.active:
                       case ConnectionState.done:
@@ -114,6 +129,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           }
                         });
 
+                        // LocalStorage.saveMessages(widget.chatRoomId, _message);
+                        log('Real time messages');
                         return ListView.builder(
                           controller: _scrollController,
                           itemCount: _message.length,
@@ -311,6 +328,20 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
         ),
       ],
+    );
+  }
+
+  /// show messages
+  Widget showMessages(List<Message> list, Size size){
+    return ListView.builder(
+      controller: _scrollController,
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        return MessageCard(
+            message: list[index],
+            size: size
+        );
+      },
     );
   }
 }

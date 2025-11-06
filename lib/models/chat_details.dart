@@ -1,6 +1,8 @@
 import 'dart:developer';
 import 'package:chat_app/models/messages.dart';
+import 'package:chat_app/screens/home_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'chat_user.dart';
@@ -8,7 +10,8 @@ import 'local_storage.dart';
 
 class ChatDetails {
   static String currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  //update currentUserId after each signIn
+
+  /// update currentUserId after each signIn
   static void updateCurrentUserId(){
     currentUserId = FirebaseAuth.instance.currentUser!.uid;
   }
@@ -104,14 +107,8 @@ class ChatDetails {
 
     return userDocRef.snapshots(). asyncMap((snapshot) async{
       if(!snapshot.exists) return [];
-
-      // print('snapshot exists');
-      // print('snapshot: ${snapshot.data()?.keys}');
       final data = snapshot.data() ?? {};
-      // print('data: ${data.keys}');
-      // print('list: ${data['Contacts']}');
       final contactIds = (data['Contacts']);
-      // print('contacts: ${contactIds.length}');
       if(contactIds.isEmpty) return [];
 
       List<ChatUser> allContacts = [];
@@ -133,10 +130,8 @@ class ChatDetails {
           );
           contactData.uid = doc.id;
           allContacts.add(contactData);
-          // print(allContacts.length);
         }
       }
-      // print(allContacts.length);
       return allContacts;
     });
   }
@@ -173,8 +168,13 @@ class ChatDetails {
   }
 
   /// get all messages from a chat room
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser user) {
-    return FirebaseFirestore.instance
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser user) async*{
+    final connected = await Connectivity().checkConnectivity();
+    if(connected.contains(ConnectivityResult.none)){
+      throw Exception('No internet');
+    }
+
+    yield* FirebaseFirestore.instance
         .collection('chats/${generateChatRoomId(user.uid!)}/messages/')
         .snapshots();
   }
@@ -234,12 +234,13 @@ class ChatDetails {
       final data = doc.data();
 
       if(data != null){
-        return {
+        final map = {
           'msg' : data['lastMessage'],
           'msgFrom' : data['lastMessageFrom'],
           'msgTime' : getDate(data['lastMessageTime']),
           'timeStamp' : data['lastMessageTime'],
         };
+        return map;
       }else{
         return null;
       }
@@ -248,16 +249,6 @@ class ChatDetails {
       log(ex.toString());
       return null;
     }
-  }
-
-  /// update last message of all the contacts to show in the home screen
-  static Future<Map<String, dynamic>> updateLastMessages(List<ChatUser> list) async{
-    Map<String, dynamic> lastMessages = {};
-    for(var contact in list){
-      final msg = await ChatDetails.getLastMessage(contact);
-      if(msg != null) lastMessages[contact.uid!] = msg;
-    }
-    return lastMessages;
   }
 
   /// get formated time
@@ -279,4 +270,8 @@ class ChatDetails {
     return '${date.day} ${months[date.month - 1]}';
   }
 
+  /// get contact and last messages stream
+  static Stream<Map<String, dynamic>> contactAndLastMsgStream() async*{
+
+  }
 }

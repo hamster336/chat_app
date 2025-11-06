@@ -13,11 +13,11 @@ import 'package:flutter/material.dart';
 import 'done_checking.dart';
 
 class VerifyOTP extends StatefulWidget {
-  final String verificationid, number;
+  final String verificationId, number;
 
   const VerifyOTP({
     super.key,
-    required this.verificationid,
+    required this.verificationId,
     required this.number,
   });
 
@@ -147,7 +147,7 @@ class _VerifyOTPState extends State<VerifyOTP> {
                       try {
                         PhoneAuthCredential credential =
                             PhoneAuthProvider.credential(
-                              verificationId: widget.verificationid,
+                              verificationId: widget.verificationId,
                               smsCode: otpController.text.toString().trim(),
                             );
 

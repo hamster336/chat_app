@@ -95,12 +95,14 @@ class LocalStorage {
     return (box.get(chatRoomId, defaultValue: <Message>[]) as List).cast<Message>();
   }
 
-  /// Get last message for a chatRoom
-  // static Message? getLastMessage(String chatRoomId) {
-  //   final box = Hive.box(_messagesBox);
-  //   final cachedMessages = (box.get(chatRoomId, defaultValue: <Message>[]) as List).cast<Message>();
-  //   if(cachedMessages.isNotEmpty) return cachedMessages[cachedMessages.length-1];
-  //   return null;
+  /// save the last message info for a chatRoom
+  // static Future<void> cacheLastMessage(String chatRoomId, Map<String, dynamic> msgInfo) async{
+  //
+  // }
+
+  /// get the last message of a chatRoom
+  // static Map<String, dynamic>? getCachedLastMessage(String chatRoomId){
+  //
   // }
 
   /// Clear all messages for a specific chat

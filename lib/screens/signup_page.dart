@@ -144,7 +144,7 @@ class _SignupPageState extends State<SignupPage> {
                               MaterialPageRoute(
                                 builder:
                                     (context) => VerifyOTP(
-                                      verificationid: verificationId,
+                                      verificationId: verificationId,
                                       number: "+${numController.text.toString()}",
                                     ),
                               ),
