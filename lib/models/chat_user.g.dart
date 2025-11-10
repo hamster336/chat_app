@@ -8,7 +8,7 @@ part of 'chat_user.dart';
 
 class ChatUserAdapter extends TypeAdapter<ChatUser> {
   @override
-  final int typeId = 0;
+  final typeId = 0;
 
   @override
   ChatUser read(BinaryReader reader) {

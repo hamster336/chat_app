@@ -290,7 +290,7 @@ class _ContactProfileScreenState extends State<ContactProfileScreen> {
         });
 
     // Update Local Storage
-    await LocalStorage.deleteContact(contactUid);
+    await LocalStorage.deleteCachedContact(contactUid);
     await LocalStorage.saveCurrentUser(currentUser);
   }
 }

@@ -17,12 +17,12 @@ class ChatDetails {
   }
 
   /// get cached currentUser
-  static ChatUser? currentUser = LocalStorage.getCurrentUser();
+  static ChatUser? currentUser = LocalStorage.getCachedCurrentUser();
 
   /// get details of a user
   static Future<ChatUser> getDetails(String userId, {bool forceRefresh = false}) async {
     if (!forceRefresh) {
-      ChatUser? cachedUser = LocalStorage.getContact(userId);
+      ChatUser? cachedUser = LocalStorage.getCachedContact(userId);
       if (cachedUser != null) return cachedUser;
     }
 
@@ -36,7 +36,7 @@ class ChatDetails {
         final data = ChatUser.fromJson(doc.data() as Map<String, dynamic>);
         data.uid = doc.id;
 
-        await LocalStorage.addContact(data);
+        await LocalStorage.cacheContact(data);
         return data;
       } else {
         throw Exception('User not found');

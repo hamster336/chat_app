@@ -1,4 +1,7 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:math';
+import 'dart:developer';
+
+import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'chat_user.dart';
 import 'messages.dart';
 
@@ -15,7 +18,7 @@ class LocalStorage {
     Hive.registerAdapter(MessageTypeAdapter());
     await Hive.openBox<ChatUser>(_contactsBox);
     await Hive.openBox<ChatUser>(_currentUserBox);
-    await Hive.openBox<Message>(_messagesBox);
+    await Hive.openBox<List>(_messagesBox);
   }
 
   //------> User and contacts caching methods <------
@@ -37,20 +40,20 @@ class LocalStorage {
   }
 
   /// Get single contact by uid
-  static ChatUser? getContact(String uid) {
+  static ChatUser? getCachedContact(String uid) {
     final box = Hive.box<ChatUser>(_contactsBox);
     return box.get(uid);
   }
 
   /// Add single contact
-  static Future<void> addContact(ChatUser contact) async {
+  static Future<void> cacheContact(ChatUser contact) async {
     if (contact.uid == null) return;
     final box = Hive.box<ChatUser>(_contactsBox);
     await box.put(contact.uid, contact);
   }
 
   /// Delete a contact
-  static Future<void> deleteContact(String uid) async {
+  static Future<void> deleteCachedContact(String uid) async {
     final box = Hive.box<ChatUser>(_contactsBox);
     await box.delete(uid);
   }
@@ -62,7 +65,7 @@ class LocalStorage {
   }
 
   /// Get current user
-  static ChatUser? getCurrentUser() {
+  static ChatUser? getCachedCurrentUser() {
     final box = Hive.box<ChatUser>(_currentUserBox);
     return box.get('current_user');
   }
@@ -71,20 +74,24 @@ class LocalStorage {
   static Future<void> clearAll() async {
     await Hive.box<ChatUser>(_contactsBox).clear();
     await Hive.box<ChatUser>(_currentUserBox).clear();
+    await Hive.box<List<Message>>(_messagesBox).clear();
   }
+
 
   // ------> Messages caching methods <------
 
   /// save messages for a chatRoom
   static Future<void> saveMessages(String chatRoomId, List<Message> messages)async {
-    final box = Hive.box(_messagesBox);   // same as writing Hive.box<List>(_messageBox)
+    // final box = Hive.box<List>(_messagesBox);   // same as writing Hive.box<List>(_messageBox)
+    final box = Hive.box<List>(_messagesBox);
+    box.clear();
     await box.put(chatRoomId, messages);
   }
 
   /// add a single message to existing chat cache
   static Future<void> addMessageToChat(String chatRoomId, Message message) async{
-    final box = Hive.box(_messagesBox);
-    final existing = (box.get(chatRoomId, defaultValue: <Message>[])as List).cast<Message>();
+    final box = Hive.box<List>(_messagesBox);
+    final existing = (box.get(chatRoomId, defaultValue: <Message>[]) as List).cast<Message>();
     existing.add(message);
     await box.put(chatRoomId, existing);
   }
@@ -95,25 +102,26 @@ class LocalStorage {
     return (box.get(chatRoomId, defaultValue: <Message>[]) as List).cast<Message>();
   }
 
-  /// save the last message info for a chatRoom
-  // static Future<void> cacheLastMessage(String chatRoomId, Map<String, dynamic> msgInfo) async{
-  //
-  // }
+  /// return number of chatRooms with messages cached`
+  static int getCachedChatRoomsCount(){
+      final box = Hive.box<List>(_messagesBox);
+      return box.length;
+  }
 
   /// get the last message of a chatRoom
   // static Map<String, dynamic>? getCachedLastMessage(String chatRoomId){
-  //
+  //  
   // }
 
   /// Clear all messages for a specific chat
   static Future<void> clearMessages(String chatRoomId) async{
-    final box = Hive.box(_messagesBox);
+    final box = Hive.box<List>(_messagesBox);
     await box.delete(chatRoomId);
   }
 
   /// Clear all messages (on logOut)
   static Future<void> clearAllMessages() async{
-    final box = Hive.box(_messagesBox);
+    final box = Hive.box<List>(_messagesBox);
     await box.clear();
   }
 }

@@ -8,7 +8,7 @@ part of 'messages.dart';
 
 class MessageAdapter extends TypeAdapter<Message> {
   @override
-  final int typeId = 1;
+  final typeId = 1;
 
   @override
   Message read(BinaryReader reader) {
@@ -57,7 +57,7 @@ class MessageAdapter extends TypeAdapter<Message> {
 
 class MessageTypeAdapter extends TypeAdapter<MessageType> {
   @override
-  final int typeId = 2;
+  final typeId = 2;
 
   @override
   MessageType read(BinaryReader reader) {
@@ -76,10 +76,8 @@ class MessageTypeAdapter extends TypeAdapter<MessageType> {
     switch (obj) {
       case MessageType.text:
         writer.writeByte(0);
-        break;
       case MessageType.image:
         writer.writeByte(1);
-        break;
     }
   }
 

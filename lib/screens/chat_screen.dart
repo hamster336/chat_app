@@ -63,7 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _loadDetails() async {
     _updateLoadingState(value: true);
     currentUser = await ChatDetails.fetchCurrentUser();
-    // _message = LocalStorage.getCachedMessages(widget.chatRoomId);
+    _message = LocalStorage.getCachedMessages(widget.chatRoomId);
     _updateLoadingState();
   }
 
@@ -97,7 +97,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     switch (snapshot.connectionState) {
                       case ConnectionState.none:
                       case ConnectionState.waiting:
-                        // _message = LocalStorage.getCachedMessages(widget.chatRoomId);
                         return const Center(child: CircularProgressIndicator());
                         // _message = LocalStorage.getCachedMessages(widget.chatRoomId);
                         // log('Cached messages');
@@ -121,15 +120,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (_scrollController.hasClients) {
-                            _scrollController.animateTo(
-                              _scrollController.position.maxScrollExtent,
-                              duration: const Duration(milliseconds: 300), // smooth scroll duration
-                              curve: Curves.easeOut, // easing curve for natural motion
-                            );
+                            _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
                           }
                         });
 
-                        // LocalStorage.saveMessages(widget.chatRoomId, _message);
+                        LocalStorage.saveMessages(widget.chatRoomId, _message);
                         log('Real time messages');
                         return ListView.builder(
                           controller: _scrollController,
