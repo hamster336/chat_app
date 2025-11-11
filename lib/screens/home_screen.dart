@@ -4,7 +4,6 @@ import 'dart:developer';
 import 'package:chat_app/models/chat_details.dart';
 import 'package:chat_app/screens/search_screen.dart';
 import 'package:chat_app/screens/user_profile_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 
@@ -13,8 +12,7 @@ import '../models/local_storage.dart';
 import 'chat_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  final bool forceRefresh;
-  const HomeScreen({super.key, this.forceRefresh = false});
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -24,8 +22,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic> lastMessages = {};
   late Stream<List<ChatUser>> _contactStream;
   TextEditingController searchController = TextEditingController();
-  ChatUser? currentUser = LocalStorage.getCachedCurrentUser();
-  List<ChatUser> contacts = [];
+  ChatUser currentUser = LocalStorage.getCachedCurrentUser()!;
+  // List<ChatUser> contacts = [];
   List<ChatUser> filteredContacts = [];
   bool isLoading = false;
   bool showStreamData = false;
@@ -40,44 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     log('${identityHashCode(this)}');
     super.initState();
-    // _contactList();
-    // _updateLastMessages(contacts);
 
     _contactStream = ChatDetails.getContactStream();
 
-    Future.delayed(const Duration(seconds: 3), (){
-      if(mounted) setState(() => showStreamData = true);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) setState(() => showStreamData = true);
     });
-
-    // _updateLastMessages();
-    if (widget.forceRefresh) {
-      _updateUsers();
-      _updateLastMessages(contacts);
-    }
-  }
-
-  void _contactList() async {
-    updateLoadingState(value: true);
-    List<ChatUser> cachedContacts = LocalStorage.getCachedContacts();
-    if (cachedContacts.isNotEmpty) {
-      log('cached contacts');
-      contacts = cachedContacts;
-      updateLoadingState();
-      return;
-    }
-    final fetchedContacts = await ChatDetails.getContacts(forceRefresh: true);
-    contacts = fetchedContacts;
-    log('fetched contacts');
-    updateLoadingState();
-  }
-
-  void _updateLastMessages(List<ChatUser> list) async{
-    updateLoadingState(value: true);
-    for(var contact in list){
-      final msg = await ChatDetails.getLastMessage(contact);
-      if(msg != null) lastMessages[contact.uid!] = msg;
-    }
-    updateLoadingState();
   }
 
   void updateLoadingState({bool value = false}) {
@@ -110,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     type: PageTransitionType.rightToLeft,
                     duration: Duration(milliseconds: 300),
                     reverseDuration: Duration(milliseconds: 300),
-                    child: UserProfileScreen(user: currentUser!),
+                    child: UserProfileScreen(user: currentUser),
                   ),
                 );
               },
@@ -139,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Icon(Icons.person, color: Colors.white, size: 25),
                   const SizedBox(width: 10),
                   Text(
-                    getFirstName(currentUser?.name),
+                    getFirstName(currentUser.name),
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -161,12 +127,13 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             const SizedBox(height: 10),
+
             // search bar
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SearchBar(
                 controller: searchController,
-                onTap: () => log('cached count: ${LocalStorage.getCachedChatRoomsCount()}'),
+                onTap: () {},
                 onChanged: (_) async {},
                 backgroundColor: WidgetStateProperty.all(Colors.grey[200]),
                 elevation: WidgetStateProperty.all(0),
@@ -175,7 +142,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.only(
@@ -186,103 +152,68 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Theme.of(context).canvasColor,
                   child: SizedBox(
                     width: size.width,
-                    child:
-                        // (isLoading)
-                        //     ? Center(child: CircularProgressIndicator())
-                        //     : (contacts.isEmpty)
-                        //     ? RefreshIndicator(
-                        //       onRefresh: () async => _updateUsers(),
-                        //       child: SingleChildScrollView(
-                        //         physics: AlwaysScrollableScrollPhysics(),
-                        //         child: Center(
-                        //           child: Column(
-                        //             children: [
-                        //               SizedBox(height: size.height * 0.15),
-                        //               Image(
-                        //                 image: const AssetImage(
-                        //                   'assets/images/message2.jpg',
-                        //                 ),
-                        //                 height: size.height * 0.33,
-                        //                 width: size.width * 0.85,
-                        //               ),
-                        //
-                        //               const SizedBox(height: 10),
-                        //
-                        //               Text(
-                        //                 'Add contacts to connect with people',
-                        //                 style: TextStyle(
-                        //                   fontSize: 17,
-                        //                   fontWeight: FontWeight.w400,
-                        //                 ),
-                        //               ),
-                        //             ],
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     )
-                        //     : RefreshIndicator(
-                        //       onRefresh: () async => _updateUsers(),
-                        //       child: ListView.builder(
-                        //         padding: EdgeInsets.symmetric(
-                        //           horizontal: 5,
-                        //           vertical: 5,
-                        //         ),
-                        //         itemCount: contacts.length,
-                        //         itemBuilder: (context, index) {
-                        //           return userCard(contacts[index]);
-                        //         },
-                        //       ),
-                        //     ),
+                    child: StreamBuilder(
+                      stream: _contactStream,
+                      builder: (context, snapshot) {
+                        List<ChatUser> contactList =
+                            LocalStorage.getCachedContacts();
 
-                    StreamBuilder(
-                        stream: _contactStream,
-                        builder: (context, snapshot) {
-                          final cachedList = LocalStorage.getCachedContacts();
-                          if(snapshot.connectionState == ConnectionState.waiting){   // while waiting
-                            log('Waiting');
-                            return _showContacts(cachedList);   // show cached users
-                          }
-
-                          if(snapshot.connectionState == ConnectionState.none){
-                            log('No connection');
-                            return _showContacts(
-                                cachedList,
-                                text: 'No Internet Connection'
-                            );    // show cached users with no connection msg
-                          }
-
-                          if(!snapshot.hasData || snapshot.data!.isEmpty){
-                            return
-                              Center(
-                                child: Column(
-                                  children: [
-                                    SizedBox(height: size.height * 0.15),
-                                    Image.asset(
-                                      'assets/images/message2.jpg',
-                                      height: size.height * 0.33,
-                                      width: size.width * 0.85,
-                                    ),
-
-                                    const SizedBox(height: 10),
-
-                                    Text(
-                                      'Add contacts to connect with people',
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                          }
-
-                          log('Stream Contacts');
-                          final contactList = snapshot.data!;
-                          // lastMessages = ChatDetails.getAllCachedLastMessages(contactList);
-                          return _showContacts(snapshot.data!);     // show users from stream
+                        contactList.sort(
+                          (a, b) => (a.name ?? '').toLowerCase().compareTo(
+                            (b.name ?? '').toLowerCase(),
+                          ),
+                        );
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          // while waiting
+                          log('Waiting');
+                          return _showContacts(
+                            contactList,
+                          ); // show cached users
                         }
-                    )
+
+                        if (snapshot.connectionState == ConnectionState.none) {
+                          log('No connection');
+                          return _showContacts(
+                            contactList,
+                            text: 'No Internet Connection',
+                          ); // show cached users with no connection msg
+                        }
+
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return Center(
+                            child: Column(
+                              children: [
+                                SizedBox(height: size.height * 0.15),
+                                Image.asset(
+                                  'assets/images/message2.jpg',
+                                  height: size.height * 0.33,
+                                  width: size.width * 0.85,
+                                ),
+
+                                const SizedBox(height: 10),
+
+                                Text(
+                                  'Add contacts to connect with people',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        log('Stream Contacts');
+                        contactList = snapshot.data!;
+                        LocalStorage.saveContacts(contactList);
+                        // lastMessages = ChatDetails.getAllCachedLastMessages(contactList);
+                        return _showContacts(
+                          contactList,
+                        ); // show users from stream
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -314,69 +245,86 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Card userCard(ChatUser otherUser) {
-    final msgData = lastMessages[otherUser.uid] ?? {};
+    // Map<String, dynamic>? msgData = {};
     String sender = '';
-    if(msgData != null){
-      sender = (msgData['msgFrom'] == ChatDetails.currentUserId) ? 'You' : getFirstName(otherUser.name) ;
-    }
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
       elevation: 1,
-      child: ListTile(
-        onTap: () {
-          // final otherUserId = otherUser.uid;
-          Navigator.push(
-            context,
-            PageTransition(
-              type: PageTransitionType.rightToLeft,
-              duration: Duration(milliseconds: 300),
-              reverseDuration: Duration(milliseconds: 300),
-              child: ChatScreen(
-                otherUser: otherUser,
-                chatRoomId: ChatDetails.generateChatRoomId(otherUser.uid!),
+      child: StreamBuilder(
+        stream: ChatDetails.getLastMsgStream(otherUser),
+        builder: (context, snapshot) {
+          final data = snapshot.data;
+          final msgData = data?.data();
+
+          if (msgData != null) {
+            log('${msgData.keys}');
+            sender =
+                (msgData['lastMessageFrom'] == ChatDetails.currentUserId)
+                    ? 'You'
+                    : getFirstName(otherUser.name);
+          }
+
+          return ListTile(
+            onTap: () {
+              // final otherUserId = otherUser.uid;
+              Navigator.push(
+                context,
+                PageTransition(
+                  type: PageTransitionType.rightToLeft,
+                  duration: Duration(milliseconds: 300),
+                  reverseDuration: Duration(milliseconds: 300),
+                  child: ChatScreen(
+                    otherUser: otherUser,
+                    chatRoomId: ChatDetails.generateChatRoomId(otherUser.uid!),
+                  ),
+                ),
+              );
+            },
+            leading: CircleAvatar(
+              radius: 30,
+              child: Text(
+                otherUser.name![0].toUpperCase(),
+                style: TextStyle(fontSize: 25),
+              ),
+            ),
+
+            title: Text(
+              otherUser.name!,
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
+            ),
+
+            subtitle:
+                (msgData?['lastMessage'] != null)
+                    ? Text(
+                      '$sender: ${msgData?['lastMessage']}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                    : Text(
+                      'Tap to begin conversation',
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+
+            trailing: Text(
+              (msgData?['lastMessageTime'] != null)
+                  ? ChatDetails.getDate(
+                    context: context,
+                    time: msgData?['lastMessageTime'],
+                  )
+                  : 'New',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black54,
+                fontWeight: FontWeight.w500,
               ),
             ),
           );
         },
-        leading: CircleAvatar(
-          radius: 30,
-          child: Text(
-            otherUser.name![0].toUpperCase(),
-            style: TextStyle(fontSize: 25),
-          ),
-        ),
-
-        title: Text(
-          otherUser.name!,
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
-        ),
-
-        subtitle: (msgData['msg'] != null)
-            ? Text('$sender: ${msgData['msg']}' ,maxLines: 1, overflow: TextOverflow.ellipsis)
-            : Text('Tap to begin conversation', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey.shade600)),
-
-        trailing: Text(
-          msgData['msgTime'] ?? 'New',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.black54,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
       ),
     );
-  }
-
-  void _updateUsers() async {
-    final fetchedContacts = await ChatDetails.getContacts(forceRefresh: true);
-    final fetchedUser = await ChatDetails.fetchCurrentUser();
-    _updateLastMessages(fetchedContacts);
-
-    if (mounted) {
-      setState(() => contacts = fetchedContacts);
-      await LocalStorage.saveContacts(fetchedContacts);
-      await LocalStorage.saveCurrentUser(fetchedUser);
-    }
   }
 
   // get the first name of the user
@@ -388,14 +336,21 @@ class _HomeScreenState extends State<HomeScreen> {
     return name.substring(0, index);
   }
 
-  Widget _showContacts(List<ChatUser> list, {String? text}){
+  Widget _showContacts(List<ChatUser> list, {String? text}) {
     return Column(
       children: [
-        if(text != null) Padding(padding: EdgeInsets.only(top: 5),
-          child: Text(text,
-            style: TextStyle(fontSize: 15, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+        if (text != null)
+          Padding(
+            padding: EdgeInsets.only(top: 5),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
-        ),
         Expanded(
           child: ListView.builder(
             padding: EdgeInsets.symmetric(horizontal: 5, vertical: 5),

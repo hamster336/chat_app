@@ -4,20 +4,15 @@
 
 import 'package:hive_ce/hive.dart';
 import 'package:chat_app/models/chat_user.dart';
-import 'package:chat_app/models/messages.dart';
 
 extension HiveRegistrar on HiveInterface {
   void registerAdapters() {
     registerAdapter(ChatUserAdapter());
-    registerAdapter(MessageAdapter());
-    registerAdapter(MessageTypeAdapter());
   }
 }
 
 extension IsolatedHiveRegistrar on IsolatedHiveInterface {
   void registerAdapters() {
     registerAdapter(ChatUserAdapter());
-    registerAdapter(MessageAdapter());
-    registerAdapter(MessageTypeAdapter());
   }
 }

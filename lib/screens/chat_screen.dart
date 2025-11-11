@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:chat_app/models/local_storage.dart';
 import 'package:chat_app/models/message_card.dart';
 import 'package:chat_app/screens/contact_profile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -63,7 +62,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void _loadDetails() async {
     _updateLoadingState(value: true);
     currentUser = await ChatDetails.fetchCurrentUser();
-    _message = LocalStorage.getCachedMessages(widget.chatRoomId);
     _updateLoadingState();
   }
 
@@ -98,33 +96,26 @@ class _ChatScreenState extends State<ChatScreen> {
                       case ConnectionState.none:
                       case ConnectionState.waiting:
                         return const Center(child: CircularProgressIndicator());
-                        // _message = LocalStorage.getCachedMessages(widget.chatRoomId);
-                        // log('Cached messages');
-                        // return ListView.builder(
-                        //   controller: _scrollController,
-                        //   itemCount: _message.length,
-                        //   itemBuilder: (context, index) {
-                        //     return MessageCard(
-                        //         message: _message[index],
-                        //         size: size
-                        //     );
-                        //   },
-                        // );
-
+                      
                       case ConnectionState.active:
                       case ConnectionState.done:
                         final data = snapshot.data?.docs;
-                        _message = data?.map((e) => Message.fromJson(e.data())).toList() ?? [];
+                        _message =
+                            data
+                                ?.map((e) => Message.fromJson(e.data()))
+                                .toList() ??
+                            [];
 
-                        if(_message.isEmpty) return const Center(child: Text('Sayy Hii!! 👋'));
+                        if (_message.isEmpty) return const Center(child: Text('Sayy Hii!! 👋'));
 
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (_scrollController.hasClients) {
-                            _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                            _scrollController.jumpTo(
+                              _scrollController.position.maxScrollExtent,
+                            );
                           }
                         });
 
-                        LocalStorage.saveMessages(widget.chatRoomId, _message);
                         log('Real time messages');
                         return ListView.builder(
                           controller: _scrollController,
@@ -132,7 +123,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           itemBuilder: (context, index) {
                             return MessageCard(
                               message: _message[index],
-                              size: size
+                              size: size,
                             );
                           },
                         );
@@ -186,7 +177,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     IconButton(
                       onPressed: () {
                         final msg = _textController.text.trim();
-                        if(msg.isNotEmpty){
+                        if (msg.isNotEmpty) {
                           ChatDetails.sendMessage(msg, widget.otherUser);
                           _textController.clear();
                         }
@@ -277,7 +268,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 context,
                 MaterialPageRoute(
                   builder:
-                      (context) => ContactProfileScreen(contact: widget.otherUser),
+                      (context) =>
+                          ContactProfileScreen(contact: widget.otherUser),
                 ),
               ),
           child: CircleAvatar(
@@ -294,48 +286,44 @@ class _ChatScreenState extends State<ChatScreen> {
 
         Flexible(
           flex: 6,
-          child:
-              Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox(
-                        width: size.width * 0.6,
-                        child: Text(
-                          widget.otherUser.name.toString(),
-                          style: TextStyle(
-                            fontSize: 22,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-
-                      Text(
-                        'Offline',
-                        style: TextStyle(fontSize: 15, color: Colors.white),
-                      ),
-                    ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: size.width * 0.6,
+                child: Text(
+                  widget.otherUser.name.toString(),
+                  style: TextStyle(
+                    fontSize: 22,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              Text(
+                'Offline',
+                style: TextStyle(fontSize: 15, color: Colors.white),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
   /// show messages
-  Widget showMessages(List<Message> list, Size size){
+  Widget showMessages(List<Message> list, Size size) {
     return ListView.builder(
       controller: _scrollController,
       itemCount: list.length,
       itemBuilder: (context, index) {
-        return MessageCard(
-            message: list[index],
-            size: size
-        );
+        return MessageCard(message: list[index], size: size);
       },
     );
   }

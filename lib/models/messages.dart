@@ -1,17 +1,11 @@
-import 'package:hive_ce/hive.dart';
-import 'package:hive_ce_flutter/hive_flutter.dart';
+class Message{
 
-part 'messages.g.dart';
-
-@HiveType(typeId: 1)
-class Message extends HiveObject{
-
-  @HiveField(0) late final String msg;
-  @HiveField(1) late final String read;
-  @HiveField(2) late final String fromId;
-  @HiveField(3) late final String toId;
-  @HiveField(4) late final String sent;
-  @HiveField(5) late final MessageType type;
+  late final String read;
+  late final String fromId;
+  late final String msg;
+  late final String toId;
+  late final String sent;
+  late final MessageType type;
 
   Message({
     required this.msg,
@@ -44,6 +38,4 @@ class Message extends HiveObject{
   }
 }
 
-
-@HiveType(typeId: 2)
-enum MessageType{@HiveField(0)text, @HiveField(1) image}
+enum MessageType{text, image}

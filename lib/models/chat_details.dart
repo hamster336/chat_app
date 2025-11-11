@@ -1,6 +1,5 @@
 import 'dart:developer';
 import 'package:chat_app/models/messages.dart';
-import 'package:chat_app/screens/home_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,7 +11,7 @@ class ChatDetails {
   static String currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
   /// update currentUserId after each signIn
-  static void updateCurrentUserId(){
+  static void updateCurrentUserId() {
     currentUserId = FirebaseAuth.instance.currentUser!.uid;
   }
 
@@ -20,7 +19,10 @@ class ChatDetails {
   static ChatUser? currentUser = LocalStorage.getCachedCurrentUser();
 
   /// get details of a user
-  static Future<ChatUser> getDetails(String userId, {bool forceRefresh = false}) async {
+  static Future<ChatUser> getDetails(
+    String userId, {
+    bool forceRefresh = false,
+  }) async {
     if (!forceRefresh) {
       ChatUser? cachedUser = LocalStorage.getCachedContact(userId);
       if (cachedUser != null) return cachedUser;
@@ -92,6 +94,11 @@ class ChatDetails {
         }
       }
 
+      allContacts.sort(
+        (a, b) => (a.name ?? '').toLowerCase().compareTo(
+          (b.name ?? '').toLowerCase(),
+        ),
+      );
       // Save to local storage
       await LocalStorage.saveContacts(allContacts);
       return allContacts;
@@ -102,27 +109,35 @@ class ChatDetails {
   }
 
   /// get Contact Stream
-  static Stream<List<ChatUser>> getContactStream(){
-    final userDocRef = FirebaseFirestore.instance.collection('Users').doc(currentUserId);
+  static Stream<List<ChatUser>> getContactStream() {
+    final userDocRef = FirebaseFirestore.instance
+        .collection('Users')
+        .doc(currentUserId);
 
-    return userDocRef.snapshots(). asyncMap((snapshot) async{
-      if(!snapshot.exists) return [];
+    return userDocRef.snapshots().asyncMap((snapshot) async {
+      if (!snapshot.exists) return [];
       final data = snapshot.data() ?? {};
       final contactIds = (data['Contacts']);
-      if(contactIds.isEmpty) return [];
+
+      if (contactIds.isEmpty) return [];
 
       List<ChatUser> allContacts = [];
 
       for (int i = 0; i < contactIds.length; i += 10) {
         List<String> batch =
-        contactIds.sublist(i, (i + 10 > contactIds.length) ? contactIds.length : i + 10)
-            .cast<String>();
+            contactIds
+                .sublist(
+                  i,
+                  (i + 10 > contactIds.length) ? contactIds.length : i + 10,
+                )
+                .cast<String>();
 
         QuerySnapshot batchSnapshot =
-        await FirebaseFirestore.instance
-            .collection('Users')
-            .where(FieldPath.documentId, whereIn: batch)
-            .get();
+            await FirebaseFirestore.instance
+                .collection('Users')
+                .where(FieldPath.documentId, whereIn: batch)
+                .orderBy('Name')
+                .get();
 
         for (var doc in batchSnapshot.docs) {
           final ChatUser contactData = ChatUser.fromJson(
@@ -132,6 +147,11 @@ class ChatDetails {
           allContacts.add(contactData);
         }
       }
+      allContacts.sort(
+        (a, b) => (a.name ?? '').toLowerCase().compareTo(
+          (b.name ?? '').toLowerCase(),
+        ),
+      );
       return allContacts;
     });
   }
@@ -168,9 +188,11 @@ class ChatDetails {
   }
 
   /// get all messages from a chat room
-  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(ChatUser user) async*{
+  static Stream<QuerySnapshot<Map<String, dynamic>>> getAllMessages(
+    ChatUser user,
+  ) async* {
     final connected = await Connectivity().checkConnectivity();
-    if(connected.contains(ConnectivityResult.none)){
+    if (connected.contains(ConnectivityResult.none)) {
       throw Exception('No internet');
     }
 
@@ -196,82 +218,80 @@ class ChatDetails {
       sent: time,
     );
 
-    final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatRoomId);
+    final chatRef = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatRoomId);
 
     // store actual message inside messages collection
     await chatRef.collection('messages').doc(time).set(message.toJson());
 
     // update the chatRoom with last message info
     await chatRef.set({
-      'participants' : [currentUserId, otherUser.uid],
-      'lastMessage' : msg,
-      'lastMessageTime' : time,
-      'lastMessageFrom' : currentUserId,
+      'participants': [currentUserId, otherUser.uid],
+      'lastMessage': msg,
+      'lastMessageTime': time,
+      'lastMessageFrom': currentUserId,
     }, SetOptions(merge: true));
   }
 
   /// format time into readable format
-  static String formatTime({required BuildContext context, required String time}){
+  static String formatTime({
+    required BuildContext context,
+    required String time,
+  }) {
     final date = DateTime.fromMillisecondsSinceEpoch(int.parse(time));
     return TimeOfDay.fromDateTime(date).format(context);
   }
 
   /// update the status of the message
-  static Future<void> updateMessageStatus(Message message) async{
-    FirebaseFirestore.instance.
-        collection('chats/${generateChatRoomId(message.fromId)}/messages/').doc(message.sent).update({
-          'read': DateTime.now().millisecondsSinceEpoch.toString(),
-        });
+  static Future<void> updateMessageStatus(Message message) async {
+    FirebaseFirestore.instance
+        .collection('chats/${generateChatRoomId(message.fromId)}/messages/')
+        .doc(message.sent)
+        .update({'read': DateTime.now().millisecondsSinceEpoch.toString()});
   }
 
-  /// get the last message of single contact
-  static Future<Map<String, dynamic>?> getLastMessage(ChatUser user) async{
+  /// get last message stream
+  static Stream<DocumentSnapshot<Map<String, dynamic>?>> getLastMsgStream(
+    ChatUser user,
+  ) {
     final chatRoomId = generateChatRoomId(user.uid!);
-    final chatRef = FirebaseFirestore.instance.collection('chats').doc(chatRoomId);
-
-    try{
-      final doc = await chatRef.get();
-      final data = doc.data();
-
-      if(data != null){
-        final map = {
-          'msg' : data['lastMessage'],
-          'msgFrom' : data['lastMessageFrom'],
-          'msgTime' : getDate(data['lastMessageTime']),
-          'timeStamp' : data['lastMessageTime'],
-        };
-        return map;
-      }else{
-        return null;
-      }
-
-    }catch (ex) {
-      log(ex.toString());
-      return null;
-    }
+    return FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatRoomId)
+        .snapshots();
   }
 
   /// get formated time
-  static String getDate(String? time) {
-    if(time == null) return '';
-
+  static String getDate({required BuildContext context, required String time}) {
     final date = DateTime.fromMillisecondsSinceEpoch(int.parse(time));
     DateTime now = DateTime.now();
 
     final difference = date.difference(now).inDays;
 
-    List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    List<String> months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
 
-    if(difference == 0) return 'Today';
-    if(difference == 1) return 'Yesterday';
+    if (difference == 0) return formatTime(context: context, time: time);
+    if (difference == 1) return 'Yesterday';
 
-    if(date.year < now.year) return '${date.day}/${date.month}/${date.year}';
+    if (date.year < now.year) return '${date.day}/${date.month}/${date.year}';
 
     return '${date.day} ${months[date.month - 1]}';
   }
 
   /// get contact and last messages stream
-  static Stream<Map<String, dynamic>> contactAndLastMsgStream() async*{
-
-  }
+  static Stream<Map<String, dynamic>> contactAndLastMsgStream() async* {}
 }
