@@ -21,29 +21,25 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Map<String, dynamic> lastMessages = {};
   late Stream<List<ChatUser>> _contactStream;
-  TextEditingController searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   ChatUser currentUser = LocalStorage.getCachedCurrentUser()!;
-  // List<ChatUser> contacts = [];
-  List<ChatUser> filteredContacts = [];
+  List<ChatUser> contacts = LocalStorage.getCachedContacts();
+  late List<ChatUser> filteredContacts;
   bool isLoading = false;
-  bool showStreamData = false;
+  bool searchTextIsEmpty = true;
 
   @override
   void dispose() {
-    searchController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
-    log('${identityHashCode(this)}');
     super.initState();
+    log('${identityHashCode(this)}');
 
     _contactStream = ChatDetails.getContactStream();
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) setState(() => showStreamData = true);
-    });
   }
 
   void updateLoadingState({bool value = false}) {
@@ -132,9 +128,13 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SearchBar(
-                controller: searchController,
+                controller: _searchController,
                 onTap: () {},
-                onChanged: (_) async {},
+                onChanged: (_) async {
+                  filteredContacts = findContact(
+                    _searchController.text.toLowerCase(),
+                  );
+                },
                 backgroundColor: WidgetStateProperty.all(Colors.grey[200]),
                 elevation: WidgetStateProperty.all(0),
                 leading: Icon(Icons.search),
@@ -152,68 +152,77 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Theme.of(context).canvasColor,
                   child: SizedBox(
                     width: size.width,
-                    child: StreamBuilder(
-                      stream: _contactStream,
-                      builder: (context, snapshot) {
-                        List<ChatUser> contactList =
-                            LocalStorage.getCachedContacts();
+                    child:
+                        (!searchTextIsEmpty)
+                            ? ListView.builder(
+                              itemCount: filteredContacts.length,
+                              itemBuilder: (context, index) {
+                                return userCard(filteredContacts[index]);
+                              },
+                            )
+                            : StreamBuilder(
+                              stream: _contactStream,
+                              builder: (context, snapshot) {
+                                List<ChatUser> contactList = contacts;
 
-                        contactList.sort(
-                          (a, b) => (a.name ?? '').toLowerCase().compareTo(
-                            (b.name ?? '').toLowerCase(),
-                          ),
-                        );
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          // while waiting
-                          log('Waiting');
-                          return _showContacts(
-                            contactList,
-                          ); // show cached users
-                        }
+                                contactList.sort(
+                                  (a, b) => (a.name ?? '')
+                                      .toLowerCase()
+                                      .compareTo((b.name ?? '').toLowerCase()),
+                                );
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  // while waiting
+                                  log('Waiting');
+                                  return _showContacts(
+                                    contactList,
+                                  ); // show cached users
+                                }
 
-                        if (snapshot.connectionState == ConnectionState.none) {
-                          log('No connection');
-                          return _showContacts(
-                            contactList,
-                            text: 'No Internet Connection',
-                          ); // show cached users with no connection msg
-                        }
+                                if (snapshot.connectionState ==
+                                    ConnectionState.none) {
+                                  log('No connection');
+                                  return _showContacts(
+                                    contactList,
+                                    text: 'No Internet Connection',
+                                  ); // show cached users with no connection msg
+                                }
 
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return Center(
-                            child: Column(
-                              children: [
-                                SizedBox(height: size.height * 0.15),
-                                Image.asset(
-                                  'assets/images/message2.jpg',
-                                  height: size.height * 0.33,
-                                  width: size.width * 0.85,
-                                ),
+                                if (!snapshot.hasData ||
+                                    snapshot.data!.isEmpty) {
+                                  return Center(
+                                    child: Column(
+                                      children: [
+                                        SizedBox(height: size.height * 0.15),
+                                        Image.asset(
+                                          'assets/images/message2.jpg',
+                                          height: size.height * 0.33,
+                                          width: size.width * 0.85,
+                                        ),
 
-                                const SizedBox(height: 10),
+                                        const SizedBox(height: 10),
 
-                                Text(
-                                  'Add contacts to connect with people',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
+                                        Text(
+                                          'Add contacts to connect with people',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w400,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+
+                                log('Stream Contacts');
+                                contactList = snapshot.data!;
+                                LocalStorage.saveContacts(contactList);
+                                // lastMessages = ChatDetails.getAllCachedLastMessages(contactList);
+                                return _showContacts(
+                                  contactList,
+                                ); // show users from stream
+                              },
                             ),
-                          );
-                        }
-
-                        log('Stream Contacts');
-                        contactList = snapshot.data!;
-                        LocalStorage.saveContacts(contactList);
-                        // lastMessages = ChatDetails.getAllCachedLastMessages(contactList);
-                        return _showContacts(
-                          contactList,
-                        ); // show users from stream
-                      },
-                    ),
                   ),
                 ),
               ),
@@ -245,7 +254,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Card userCard(ChatUser otherUser) {
-    // Map<String, dynamic>? msgData = {};
+    Map<String, dynamic>? msgData = LocalStorage.getCachedLastMessage(
+      otherUser.uid!,
+    );
     String sender = '';
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
@@ -254,14 +265,15 @@ class _HomeScreenState extends State<HomeScreen> {
         stream: ChatDetails.getLastMsgStream(otherUser),
         builder: (context, snapshot) {
           final data = snapshot.data;
-          final msgData = data?.data();
+          msgData = data?.data();
 
           if (msgData != null) {
-            log('${msgData.keys}');
+            log('${msgData?.keys}');
             sender =
-                (msgData['lastMessageFrom'] == ChatDetails.currentUserId)
+                (msgData?['lastMessageFrom'] == ChatDetails.currentUserId)
                     ? 'You'
                     : getFirstName(otherUser.name);
+            LocalStorage.cacheLastMesage(otherUser.uid!, msgData!);
           }
 
           return ListTile(
@@ -336,6 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return name.substring(0, index);
   }
 
+  /// show the contacts on the home screen
   Widget _showContacts(List<ChatUser> list, {String? text}) {
     return Column(
       children: [
@@ -362,5 +375,22 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
+  }
+
+  /// find a contact from contacts
+  List<ChatUser> findContact(String? name) {
+    if (name == null || name.trim().isEmpty) {
+      setState(() => searchTextIsEmpty = true);
+      return [];
+    }
+
+    setState(() => searchTextIsEmpty = false);
+    List<ChatUser> match = [];
+
+    for (var i in contacts) {
+      if (i.searchKeywords!.contains(name)) match.add(i);
+    }
+
+    return match;
   }
 }

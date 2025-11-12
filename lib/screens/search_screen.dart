@@ -63,7 +63,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 controller: searchController,
                 onChanged: (_) async {
                   // log("Contacts: ${currentUser.contacts}");
-                  matchedUsers = await findUser(
+                  matchedUsers = await findNewContacts(
                     searchController.text.toString(),
                   );
                 },
@@ -238,8 +238,8 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Future<List<ChatUser>> findUser(String? user) async {
-    if (user == null || user.trim().isEmpty) {
+  Future<List<ChatUser>> findNewContacts(String? usersName) async {
+    if (usersName == null || usersName.trim().isEmpty) {
       setState(() {
         userFound = false;
         isLoading = false;
@@ -259,7 +259,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     try {
       // Convert search term to lowercase for case-insensitive search
-      String searchTerm = user.toLowerCase();
+      String searchTerm = usersName.toLowerCase();
 
       // Query Firestore: searchKeywords must contain the substring
       QuerySnapshot snapshot =

@@ -291,7 +291,4 @@ class ChatDetails {
 
     return '${date.day} ${months[date.month - 1]}';
   }
-
-  /// get contact and last messages stream
-  static Stream<Map<String, dynamic>> contactAndLastMsgStream() async* {}
 }
