@@ -1,5 +1,8 @@
+import 'package:chat_app/models/chat_details.dart';
 import 'package:chat_app/models/chat_user.dart';
+import 'package:chat_app/models/ui_helper.dart';
 import 'package:chat_app/screens/signup_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -165,13 +168,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
             const SizedBox(height: 30),
 
-            // Edit Profile
+            // log Out
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => {},
+                  onTap: () => _logOut(),
                   borderRadius: BorderRadius.circular(15),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 15),
@@ -184,13 +187,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
-                          Icons.edit,
+                          Icons.logout_outlined,
                           color: Colors.black,
                           size: 24,
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Edit Profile',
+                          'Log Out',
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: size.shortestSide * 0.05,
@@ -206,13 +209,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
             SizedBox(height: size.height * 0.02),
 
-            // log Out
+            // delete account
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => _logOut(),
+                  onTap: () => _deleteAccount(),
                   borderRadius: BorderRadius.circular(15),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 15),
@@ -224,14 +227,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
-                          Icons.logout_outlined,
-                          color: Colors.red,
-                          size: 24,
-                        ),
+                        const Icon(Icons.delete, color: Colors.red, size: 24),
                         const SizedBox(width: 10),
                         Text(
-                          'Log Out',
+                          'Delete Account',
                           style: TextStyle(
                             color: Colors.red,
                             fontSize: size.shortestSide * 0.05,
@@ -246,20 +245,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
 
             SizedBox(height: size.height * 0.01),
-          ]
+          ],
         ),
       ),
     );
   }
 
-  void _logOut(){
+  void _logOut() {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text(
             "Log Out",
-            style: TextStyle(fontSize: 20, color: Colors.red, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.red,
+              fontWeight: FontWeight.w600,
+            ),
           ),
 
           content: Text(
@@ -272,7 +275,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('No', style: TextStyle(color: Colors.blue, fontSize: 17)),
+              child: Text(
+                'No',
+                style: TextStyle(color: Colors.blue, fontSize: 17),
+              ),
             ),
 
             TextButton(
@@ -280,13 +286,111 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 final navigator = Navigator.of(context);
                 await FirebaseAuth.instance.signOut().then((value) {
                   navigator.pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (context) => const SignupPage(),
-                    ),
-                        (route) => false,
+                    MaterialPageRoute(builder: (context) => const SignupPage()),
+                    (route) => false,
                   );
                   LocalStorage.clearAll();
                 });
+              },
+              child: Text(
+                'Yes',
+                style: TextStyle(color: Colors.blue, fontSize: 17),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteAccount() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            "Delete Account",
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.red,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          content: Text(
+            "Are you sure you want to delete your account?",
+            style: TextStyle(fontSize: 17, color: Colors.black),
+          ),
+
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(
+                'No',
+                style: TextStyle(color: Colors.blue, fontSize: 17),
+              ),
+            ),
+
+            TextButton(
+              onPressed: () async {
+                final navigator = Navigator.of(context);
+                Navigator.pop(context); // close confirmation box
+                final uid = ChatDetails.currentUserId;
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder:
+                      (_) => Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 5,
+                          color: Colors.blue[200],
+                        ),
+                      ),
+                );
+
+                try {
+                  // remove current user from the contacts of every other user
+                  final users =
+                      await FirebaseFirestore.instance
+                          .collection('Users')
+                          .get();
+                  for (var doc in users.docs) {
+                    final contacts =
+                        ((doc['Contacts'] ?? []) as List).cast<String>();
+                    if (contacts.contains(uid)) {
+                      await doc.reference.update({
+                        'Contacts': FieldValue.arrayRemove([uid]),
+                      });
+                    }
+                  }
+
+                  // delete the document of the current user
+                  await FirebaseFirestore.instance
+                      .collection('Users')
+                      .doc(uid)
+                      .delete();
+
+                  // signout currentUser without deleting its auth info
+                  await FirebaseAuth.instance.signOut().then((_) {
+                    navigator.pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (context) => const SignupPage(),
+                      ),
+                      (route) => false,
+                    );
+                    LocalStorage.clearAll();
+                  });
+                } catch (ex) {
+                  navigator.pop(); // pop the loader
+                  if (mounted) {
+                    UiHelper.customSnackBar(
+                      navigator.context,
+                      'Failed to delete account: ${ex.toString()}',
+                    );
+                  }
+                }
               },
               child: Text(
                 'Yes',

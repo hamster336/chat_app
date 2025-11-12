@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:chat_app/models/chat_details.dart';
 import 'package:chat_app/screens/search_screen.dart';
@@ -37,8 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    log('${identityHashCode(this)}');
-
     _contactStream = ChatDetails.getContactStream();
   }
 
@@ -155,6 +152,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child:
                         (!searchTextIsEmpty)
                             ? ListView.builder(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 5,
+                              ),
                               itemCount: filteredContacts.length,
                               itemBuilder: (context, index) {
                                 return userCard(filteredContacts[index]);
@@ -173,7 +174,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
                                   // while waiting
-                                  log('Waiting');
                                   return _showContacts(
                                     contactList,
                                   ); // show cached users
@@ -181,7 +181,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                 if (snapshot.connectionState ==
                                     ConnectionState.none) {
-                                  log('No connection');
                                   return _showContacts(
                                     contactList,
                                     text: 'No Internet Connection',
@@ -214,7 +213,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                   );
                                 }
 
-                                log('Stream Contacts');
                                 contactList = snapshot.data!;
                                 LocalStorage.saveContacts(contactList);
                                 // lastMessages = ChatDetails.getAllCachedLastMessages(contactList);
@@ -268,7 +266,6 @@ class _HomeScreenState extends State<HomeScreen> {
           msgData = data?.data();
 
           if (msgData != null) {
-            log('${msgData?.keys}');
             sender =
                 (msgData?['lastMessageFrom'] == ChatDetails.currentUserId)
                     ? 'You'

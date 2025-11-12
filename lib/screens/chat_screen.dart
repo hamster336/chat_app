@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:chat_app/models/message_card.dart';
 import 'package:chat_app/screens/contact_profile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -96,7 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       case ConnectionState.none:
                       case ConnectionState.waiting:
                         return const Center(child: CircularProgressIndicator());
-                      
+
                       case ConnectionState.active:
                       case ConnectionState.done:
                         final data = snapshot.data?.docs;
@@ -106,7 +104,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 .toList() ??
                             [];
 
-                        if (_message.isEmpty) return const Center(child: Text('Sayy Hii!! 👋'));
+                        if (_message.isEmpty) {
+                          return const Center(child: Text('Sayy Hii!! 👋'));
+                        }
 
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           if (_scrollController.hasClients) {
@@ -116,7 +116,6 @@ class _ChatScreenState extends State<ChatScreen> {
                           }
                         });
 
-                        log('Real time messages');
                         return ListView.builder(
                           controller: _scrollController,
                           itemCount: _message.length,

@@ -75,7 +75,7 @@ class _CreateAccountState extends State<CreateAccount> {
                                 onTap: () async {
                                   final navContext = Navigator.of(context);
                                   await pickImage(ImageSource.camera);
-                                  if(!mounted) return;
+                                  if (!mounted) return;
                                   navContext.pop();
                                 },
                                 leading: Icon(Icons.camera),
@@ -131,6 +131,8 @@ class _CreateAccountState extends State<CreateAccount> {
                 ),
 
                 const SizedBox(height: 15),
+
+                // phone number field
                 Container(
                   width: size.width,
                   height: 50,
@@ -157,6 +159,7 @@ class _CreateAccountState extends State<CreateAccount> {
 
                 const SizedBox(height: 15),
 
+                // bio field
                 UiHelper.customTextField(
                   bioController,
                   "Bio (Optional)",
@@ -166,6 +169,7 @@ class _CreateAccountState extends State<CreateAccount> {
 
                 const SizedBox(height: 15),
 
+                // save button
                 SizedBox(
                   width: size.width * 0.65,
                   height: 50,
@@ -305,7 +309,9 @@ class _CreateAccountState extends State<CreateAccount> {
                           message: 'Getting things ready...',
                           loadData: () async {
                             ChatDetails.updateCurrentUserId();
-                            await LocalStorage.saveContacts(await ChatDetails.getContacts());
+                            await LocalStorage.saveContacts(
+                              await ChatDetails.getContacts(),
+                            );
                             await LocalStorage.saveCurrentUser(
                               await ChatDetails.fetchCurrentUser(),
                             );
