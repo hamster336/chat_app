@@ -1,6 +1,8 @@
 import 'package:chat_app/models/message_card.dart';
 import 'package:chat_app/screens/contact_profile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter/foundation.dart' as foundation;
 import 'package:flutter/material.dart';
 
 import '../models/chat_details.dart';
@@ -30,6 +32,7 @@ class _ChatScreenState extends State<ChatScreen> {
   late ChatUser currentUser;
   bool isLoading = false;
   bool isTyping = false;
+  bool showEmoji = false;
 
   late Stream<QuerySnapshot<Map<String, dynamic>>> _msgStream;
 
@@ -74,125 +77,187 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          elevation: 2,
-          automaticallyImplyLeading: false,
-          flexibleSpace: _appBar(size),
-        ),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: SafeArea(
+        child: PopScope(
+          canPop: (showEmoji) ? false : true,
+          onPopInvokedWithResult: (didPop, _) {
+            // didpop tells if the pop attempt was successful or not
+            if (!didPop && showEmoji) {
+            // when canPop is false, didpop will be false and when showEmoji is true, the back gesture will close the Emoji section
+              setState(() => showEmoji = false);
+            }
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              elevation: 2,
+              automaticallyImplyLeading: false,
+              flexibleSpace: _appBar(size),
+            ),
 
-        body: ColoredBox(
-          color: Colors.lightBlue.shade50,
-          child: Column(
-            children: [
-              Expanded(
-                child: StreamBuilder(
-                  stream: _msgStream,
-                  builder: (context, snapshot) {
-                    switch (snapshot.connectionState) {
-                      case ConnectionState.none:
-                      case ConnectionState.waiting:
-                        return const Center(child: CircularProgressIndicator());
-
-                      case ConnectionState.active:
-                      case ConnectionState.done:
-                        final data = snapshot.data?.docs;
-                        _message =
-                            data
-                                ?.map((e) => Message.fromJson(e.data()))
-                                .toList() ??
-                            [];
-
-                        if (_message.isEmpty) {
-                          return const Center(child: Text('Sayy Hii!! 👋'));
-                        }
-
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (_scrollController.hasClients) {
-                            _scrollController.jumpTo(
-                              _scrollController.position.maxScrollExtent,
+            body: ColoredBox(
+              color: Colors.lightBlue.shade50,
+              child: Column(
+                children: [
+                  Expanded(
+                    // chats
+                    child: StreamBuilder(
+                      stream: _msgStream,
+                      builder: (context, snapshot) {
+                        switch (snapshot.connectionState) {
+                          case ConnectionState.none:
+                          case ConnectionState.waiting:
+                            return const Center(
+                              child: CircularProgressIndicator(),
                             );
-                          }
-                        });
 
-                        return ListView.builder(
-                          controller: _scrollController,
-                          itemCount: _message.length,
-                          itemBuilder: (context, index) {
-                            return MessageCard(
-                              message: _message[index],
-                              size: size,
+                          case ConnectionState.active:
+                          case ConnectionState.done:
+                            final data = snapshot.data?.docs;
+                            _message =
+                                data
+                                    ?.map((e) => Message.fromJson(e.data()))
+                                    .toList() ??
+                                [];
+
+                            if (_message.isEmpty) {
+                              return const Center(child: Text('Sayy Hii!! 👋'));
+                            }
+
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (_scrollController.hasClients) {
+                                _scrollController.jumpTo(
+                                  _scrollController.position.maxScrollExtent,
+                                );
+                              }
+                            });
+
+                            return ListView.builder(
+                              controller: _scrollController,
+                              itemCount: _message.length,
+                              itemBuilder: (context, index) {
+                                return MessageCard(
+                                  message: _message[index],
+                                  size: size,
+                                );
+                              },
                             );
-                          },
-                        );
-                    }
-                  },
-                ),
-              ),
-
-              // bottom message typing and sending widgets
-              Padding(
-                padding: const EdgeInsets.only(left: 5, right: 5, bottom: 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadiusGeometry.circular(25),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: () {},
-                              icon: Icon(Icons.emoji_emotions, size: 28),
-                              color: Theme.of(context).primaryColor,
-                            ),
-
-                            Expanded(
-                              child: TextField(
-                                focusNode: _focusNode,
-                                controller: _textController,
-                                decoration: InputDecoration(
-                                  hintText: 'Send a message',
-                                  border: InputBorder.none,
-                                ),
-                                maxLines: null,
-                              ),
-                            ),
-
-                            // attach Document button
-                            AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 50),
-                              child: (isTyping) ? null : _attachDocument(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 4),
-                    IconButton(
-                      onPressed: () {
-                        final msg = _textController.text.trim();
-                        if (msg.isNotEmpty) {
-                          ChatDetails.sendMessage(msg, widget.otherUser);
-                          _textController.clear();
                         }
                       },
-                      icon: Icon(Icons.send, size: 30),
-                      color: Colors.white,
-                      style: IconButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColor,
-                        padding: EdgeInsets.all(9),
-                        shape: CircleBorder(),
+                    ),
+                  ),
+
+                  // bottom message typing and sending widgets
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 5,
+                      right: 5,
+                      bottom: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadiusGeometry.circular(25),
+                            ),
+                            child: Row(
+                              children: [
+                                // emoji button
+                                IconButton(
+                                  onPressed: () {
+                                    _focusNode.unfocus();
+                                    setState(() => showEmoji = !showEmoji);
+                                  },
+                                  icon: Icon(Icons.emoji_emotions, size: 28),
+                                  color: Theme.of(context).primaryColor,
+                                ),
+
+                                // textField
+                                Expanded(
+                                  child: TextField(
+                                    onTap:
+                                        () => setState(() => showEmoji = false),
+                                    focusNode: _focusNode,
+                                    controller: _textController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Send a message',
+                                      border: InputBorder.none,
+                                    ),
+                                    maxLines: null,
+                                  ),
+                                ),
+
+                                // attach Document button
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 50),
+                                  child: (isTyping) ? null : _attachDocument(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 4),
+                        // send message button
+                        IconButton(
+                          onPressed: () {
+                            final msg = _textController.text.trim();
+                            if (msg.isNotEmpty) {
+                              ChatDetails.sendMessage(msg, widget.otherUser);
+                              _textController.clear();
+                            }
+                          },
+                          icon: Icon(Icons.send, size: 30),
+                          color: Colors.white,
+                          style: IconButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            padding: EdgeInsets.all(9),
+                            shape: CircleBorder(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // emoji's tray
+                  if (showEmoji)
+                    SizedBox(
+                      height: size.height * 0.35,
+                      child: EmojiPicker(
+                        onBackspacePressed:
+                            () => setState(() => showEmoji = false),
+                        textEditingController:
+                            _textController, // pass here the same [TextEditingController] that is connected to your input field, usually a [TextFormField]
+                        config: Config(
+                          height: 256,
+                          checkPlatformCompatibility: true,
+                          emojiViewConfig: EmojiViewConfig(
+                            backgroundColor: Colors.lightBlue.shade50,
+                            emojiSizeMax:
+                                30 *
+                                (foundation.defaultTargetPlatform ==
+                                        TargetPlatform.iOS
+                                    ? 1.20
+                                    : 1.0),
+                          ),
+                          viewOrderConfig: const ViewOrderConfig(
+                            top: EmojiPickerItem.categoryBar,
+                            middle: EmojiPickerItem.emojiView,
+                            bottom: EmojiPickerItem.searchBar,
+                          ),
+                          skinToneConfig: const SkinToneConfig(),
+                          categoryViewConfig: const CategoryViewConfig(),
+                          bottomActionBarConfig: const BottomActionBarConfig(),
+                          searchViewConfig: const SearchViewConfig(),
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -284,32 +349,19 @@ class _ChatScreenState extends State<ChatScreen> {
         const SizedBox(width: 10),
 
         Flexible(
-          flex: 6,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: size.width * 0.6,
-                child: Text(
-                  widget.otherUser.name.toString(),
-                  style: TextStyle(
-                    fontSize: 22,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+          child: SizedBox(
+            width: size.width * 0.6,
+            child: Text(
+              widget.otherUser.name.toString(),
+              style: TextStyle(
+                fontSize: 22,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
               ),
-
-              Text(
-                'Offline',
-                style: TextStyle(fontSize: 15, color: Colors.white),
-              ),
-            ],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ),
       ],
